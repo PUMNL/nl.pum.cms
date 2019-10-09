@@ -100,6 +100,38 @@ paths:
           schema:
             type: object
             $ref: '#/definitions/ExpertApplication'
+  /expertapplication/{submission_id}/photo:
+    get:
+      summary: returns the cv that belongs to a submission identified by submission_id
+      tags: [form]
+      produces:
+        - image/jpeg
+        - image/gif
+        - image/png
+      parameters:
+        - in: path
+          name: submission_id
+          type: integer
+          required: true
+      responses:
+            200:
+              description: returns the curriculum of the applicant
+  /expertapplication/{submission_id}/cv:
+    get:
+      summary: returns the cv that belongs to a submission identified by submission_id
+      tags: [form]
+      produces:
+        - application/msword
+        - application/pdf
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      parameters:
+        - in: path
+          name: submission_id
+          type: integer
+          required: true
+      responses:
+        200:
+          description: returns the curriculum of the applicant
   /submissions:
     get:
       summary: returns a list with submissions
