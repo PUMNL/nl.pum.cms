@@ -1,0 +1,374 @@
+swagger: "2.0"
+info:
+  title: Procus - Drupal Api
+  description: Enables Procus to read, an update the Drupal CMS for newsletter subscriptions, expert applications
+               and client and partner registrations
+  version: v.01
+host: api.pum.net
+schemes:
+  - https
+tags:
+  - name: lookup
+    description: tables used by the drupal CMS to lookup master data from Procus. Procus posts this data on a regular
+                 basis.
+  - name: form
+    description: services used by procus to read the contents of the submitted form
+paths:
+  /representatives:
+    post:
+      summary: Post all the actual representatives.
+      tags:
+        - lookup
+      description: Optional extended description in Markdown.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: representatives
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Representative'
+      responses:
+        200:
+          description: OK
+  /sectors:
+    post:
+      summary: Post all the actual sectors.
+      tags: [lookup]
+      description: Optional extended description in Markdown.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: sectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Sector'
+      responses:
+        200:
+          description: OK
+  /countries:
+    post:
+      summary: Post all the actual countries.
+      tags: [lookup]
+      description: Optional extended description in Markdown.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: sectors
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Country'
+      responses:
+        200:
+          description: OK
+  /newsletter/{submission_id}:
+    get:
+      summary: returns one newsletter subscription
+      tags: [form]
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: submission_id
+          type: integer
+          required: true
+      responses:
+        200:
+          description: One newsletter subscription identified by the id
+          schema:
+            type: object
+            $ref: '#/definitions/NewsLetterSubscription'
+  /expertapplication/{submission_id}:
+    get:
+      summary: returns one expert application
+      tags: [form]
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: submission_id
+          type: integer
+          required: true
+      responses:
+        200:
+          description: One expert application identified by the id
+          schema:
+            type: object
+            $ref: '#/definitions/ExpertApplication'
+  /submissions:
+    get:
+      summary: returns a list with submissions
+      description:
+        The parameter works als follows
+
+        * none of the parameters filled, return an error (the other option would be return all, but that would cause a performance hit)
+
+        * _from_id_ return a list of all subscriptions where  submission_id >= _from_id_
+
+        * _from_id_ and _to_id_ return a list of all subscriptions where _from_id_ <= _submission_id_ < _to_id_
+
+        * _from_date_ return a list of all subscriptions where submission_date >= _from_date_
+
+        * _from_date_ and _to_date_ return a list of all subscriptions where _from_date_ <= _submission_date_ < _to_date_
+
+        * all other combinations of parameters return an error.
+      tags: [form]
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: from_id
+          type: integer
+        - in: query
+          name: to_id
+          type: integer
+        - in: query
+          name: from_date
+          type: string
+          format: 'date-time'
+        - in: query
+          name: to_date
+          type: string
+          format: 'date-time'
+      responses:
+        200:
+          description: List of Expert Applications entered in the CMS.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Submission'
+        400:
+          description: Returns unusable parameters
+          schema:
+            type: string
+definitions:
+  Representative:
+    type: object
+    required: [contact_id,display_name,sort_name]
+    properties:
+      contact_id:
+        type: integer
+        description: Its the unique code for the representative in Procus.
+      display_name:
+        type: string
+        maxLength: 128
+        description: Name of the representative used to be shown on the screen
+      sort_name:
+        type: string
+        maxLength: 128
+        description: Name used for sorting (in the Netherlands this is done on last name)
+      email:
+        type: string
+        maxLength: 254
+        description: Email
+      phone:
+        type: string
+        maxLength: 32
+        description: Phone
+      city:
+        type: string
+        maxLength: 64
+        description: City where the representative is stationed
+      geocode:
+        type: string
+        description: TODO - ask PUM what this is from procus
+  Sector:
+    type: object
+    properties:
+      sector_id:
+         type: integer
+         description: unique code to identify the sector
+      name:
+          type: string
+          maxLength: 128
+  Country:
+    type: object
+    properties:
+      country_id:
+        type: integer
+        description: internal Procus code for country
+      iso_code:
+        type: string
+        maxLength: 2
+        description: two letter is code of a country (in capitals)
+      name:
+        type: string
+        maxLength: 64
+  Submission:
+    type: object
+    required: ['submission_id','submission_date','submission_type']
+    properties:
+      submission_id:
+        type: integer
+        description: Unique id for each submission, these increase in time;
+      submission_date:
+        type: string
+        format: 'date-time'
+      submission_type:
+        type: string
+        enum: ['NewsLetterSubscription','ExpertApplication','ClientPartnerRegistration']
+  NewsLetterSubscription:
+    type: object
+    required: [submission_id,email]
+    properties:
+      submission_id:
+        type: integer
+      first_name:
+        type: string
+        maxLength: 64
+      middle_name:
+        type: string
+        maxLength: 64
+      last_name:
+        type: string
+        maxLength: 64
+      email:
+        type: string
+        format: email
+        maxLength: 256
+  ExpertApplication:
+    type: object
+    required:
+      - submission_id
+      - first_name
+      - last_name
+      - middle_name
+      - initials
+      - gender
+      - birth_date
+      - street_address
+      - postal_code
+      - country_id
+      - phone
+      - email
+      - motivation
+      - sector_id
+      - source
+    properties:
+      submission_id:
+        type: integer
+      name_prefix:
+        type: string
+        enum: [Mrs.,Ms.,Mr.,Dr]
+      first_name:
+        type: string
+        maxLength: 64
+      middle_name:
+        type: string
+        maxLength: 64
+        description: TO Do - where is this used for - Remark that middle name is used by the Americans to store
+                     the second of the first names to use for identfication and by the dutch to store infix. In the newsletter subscription infix is asked
+      last_name:
+        type: string
+        maxLength: 64
+      initials:
+        type: string
+        description: TO Do where do these goto in Civi - in nickname
+      gender:
+        type: string
+        enum: [female,male]
+      birth_date:
+        type: string
+        format: date
+      home_address:
+        type: object
+        $ref: '#/definitions/Address'
+      phone:
+          type: string
+          description: I presume this is te landline because the mobile phone is also asked
+      mobile:
+          type: string
+          description: Mobile phone
+      email:
+          type: string
+          maxLength: 254
+          format: email
+      motivation:
+          type: string
+      sector_id:
+          type: integer
+          description: reference to the sector TODO has an expert only one or multiple
+      source:
+          type: string
+          description: TODO -where does this go to in Civi (on the specs this was denoted with first contact)
+  ClientPartnerRegistration:
+    type: object
+    required: [organization_name,visit_address,has_postal_address]
+    properties:
+      organization_name:
+        type: string
+        maxLength: 128
+      visit_address:
+        type: object
+        $ref: '#/definitions/Address'
+      postal_address:
+        type: object
+        $ref: '#/definitions/Address'
+      phone:
+        type: string
+      phone_2:
+        type: string
+      website:
+        type: string
+      facebook:
+        type: string
+      agreement_terms_and_conditions:
+        type: string
+        enum: [Y,N]
+      representative_id:
+        type: integer
+      gender:
+        type: string
+        enum: [female,male]
+      first_name:
+        type: string
+      last_name:
+        type: string
+      contact_phone:
+         type: string
+      skype_name:
+         type: string
+      contact_email:
+         type: string
+      job_title:
+         type: string
+      newsletter_subscription:
+         type: string
+         enum: [Y,N]
+      contact_type:
+         type: string
+         enum: [Customer,Partner]
+
+
+
+
+  Address:
+    type: object
+    properties:
+      street_address:
+        type: string
+        maxLength: 96
+        description: street including housenummer
+      postal_code:
+        type: string
+        maxLength: 12
+      city:
+        type: string
+        maxLength: 64
+      country_id:
+        type: integer
+        description: Country id as returned by the countries service
+
+
+
+
+
+
+
+
+
