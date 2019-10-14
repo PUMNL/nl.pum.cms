@@ -2,7 +2,7 @@ swagger: "2.0"
 info:
   title: Procus - Drupal Api
   description: Enables Procus to read, an update the Drupal CMS for newsletter subscriptions, expert applications
-               and client and partner registrations
+               and client registration
   version: v.01
 host: api.pum.net
 schemes:
@@ -89,9 +89,9 @@ paths:
             type: object
             $ref: '#/definitions/NewsLetterSubscription'
 
-  /clientpartnerregistration/{submission_id}:
+  /clientregistration/{submission_id}:
     get:
-      summary: returns one client or partner registration
+      summary: returns one client registration
       tags: [form]
       produces:
         - application/json
@@ -102,10 +102,10 @@ paths:
           required: true
       responses:
         200:
-          description: One Client or Partner registration identified by the id
+          description: One Client registration identified by the id
           schema:
             type: object
-            $ref: '#/definitions/ClientPartnerRegistration'
+            $ref: '#/definitions/ClientRegistration'
 
   /expertapplication/{submission_id}:
     get:
@@ -275,7 +275,7 @@ definitions:
         format: 'date-time'
       submission_type:
         type: string
-        enum: ['NewsLetterSubscription','ExpertApplication','ClientPartnerRegistration']
+        enum: ['NewsLetterSubscription','ExpertApplication','ClientRegistration']
 
   NewsLetterSubscription:
     type: object
@@ -363,7 +363,7 @@ definitions:
           type: string
           description: TODO -where does this go to in Civi (on the specs this was denoted with first contact)
 
-  ClientPartnerRegistration:
+  ClientRegistration:
     type: object
     required: [organization_name,visit_address,has_postal_address]
     properties:
@@ -407,9 +407,6 @@ definitions:
       newsletter_subscription:
          type: string
          enum: [Y,N]
-      contact_type:
-         type: string
-         enum: [Customer,Partner]
 
   Address:
     type: object
