@@ -3,7 +3,7 @@ info:
   title: Procus - Drupal Api
   description: Enables Procus to read, an update the Drupal CMS for newsletter subscriptions, expert applications
                and client registration
-  version: v.01
+  version: v.02
 host: api.pum.net
 schemes:
   - https
