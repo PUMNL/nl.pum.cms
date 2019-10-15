@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/cms/preferences</path>
+    <page_callback>CRM_CMS_Form_Preferences</page_callback>
+    <title>Preferences</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>
