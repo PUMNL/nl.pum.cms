@@ -235,9 +235,6 @@ definitions:
         type: string
         maxLength: 64
         description: City where the representative is stationed
-      geocode:
-        type: string
-        description: TODO - ask PUM what this is from procus
 
   Sector:
     type: object
@@ -314,7 +311,6 @@ definitions:
       - email
       - motivation
       - sector_id
-      - source
     properties:
       submission_id:
         type: integer
@@ -334,7 +330,8 @@ definitions:
         maxLength: 64
       initials:
         type: string
-        description: TO Do where do these goto in Civi - in nickname
+        maxLength: 25
+        description: Special Custom Field in Civi.
       gender:
         type: string
         enum: [female,male]
@@ -346,9 +343,11 @@ definitions:
         $ref: '#/definitions/Address'
       phone:
           type: string
+          maxLength: 32
           description: I presume this is te landline because the mobile phone is also asked
       mobile:
           type: string
+          maxLength: 32
           description: Mobile phone
       email:
           type: string
@@ -356,16 +355,21 @@ definitions:
           format: email
       motivation:
           type: string
+          description: this is a memo field in Civi, so has no length
       sector_id:
           type: integer
-          description: reference to the sector TODO has an expert only one or multiple
-      source:
+          description: reference to the sector
+      first_contact:
           type: string
-          description: TODO -where does this go to in Civi (on the specs this was denoted with first contact)
+          maxLength: 50
+          description: Option list from CiviCRM (used the option values with the type first_contact
+      first_contact_other:
+          type: string
+          description: Memo field in Civi - so has nog length - must have a value when first_contact is not chosen
 
   ClientRegistration:
     type: object
-    required: [organization_name,visit_address,has_postal_address]
+    required: [organization_name,visit_address,phone,agreement_terms_and_conditions,representative_id,gender,first_name,last_name,contact_phone]
     properties:
       organization_name:
         type: string
@@ -378,12 +382,18 @@ definitions:
         $ref: '#/definitions/Address'
       phone:
         type: string
+        maxLength: 32
       phone_2:
         type: string
+        maxLength: 32
       website:
         type: string
+        maxLength: 128
+        description: website must be a valid url. That means it must start with http:/ or better https://
       facebook:
         type: string
+        maxLength: 128
+        description: website must be a valid url. That means it must start with http:/ or better https://
       agreement_terms_and_conditions:
         type: string
         enum: [Y,N]
@@ -394,22 +404,29 @@ definitions:
         enum: [female,male]
       first_name:
         type: string
+        maxLength: 64
       last_name:
         type: string
+        maxLength: 64
       contact_phone:
          type: string
+         maxLength: 32
       skype_name:
          type: string
+         maxLength: 254
       contact_email:
          type: string
+         maxLength: 254
       job_title:
          type: string
+         maxLength: 255
       newsletter_subscription:
          type: string
          enum: [Y,N]
 
   Address:
     type: object
+    required: [street_address,city,country_id]
     properties:
       street_address:
         type: string
@@ -418,12 +435,33 @@ definitions:
       postal_code:
         type: string
         maxLength: 12
+        description: postal_code is mandatory when the address is of an expert
       city:
         type: string
         maxLength: 64
       country_id:
         type: integer
         description: Country id as returned by the countries service
+
+  OptionValue:
+    type: object
+    required: [group,label,value,weight]
+    properties:
+      group:
+        type: string
+        maxLength: 50
+        description: Group name for the option type (we start with one name first_contact)
+      label:
+        type: string
+        maxLength: 50
+        description: is shown to the enduser
+      value:
+        type: string
+        maxLength: 50
+        description: is stored in the table
+      weight:
+        type: integer
+        description: Used for sorting the values in a dropdown list
 
 
 
