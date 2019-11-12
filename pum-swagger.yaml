@@ -235,6 +235,16 @@ definitions:
         type: string
         maxLength: 64
         description: City where the representative is stationed
+      country_id_residence:
+        type: integer
+        description: Id of the country where the representative is stationed
+      country_id_responsible:
+        type: integer
+        description: Id of the country where the representative is assigned to
+      geocode_longitude:
+        type: string
+      geocode_latitude:
+        type: string
 
   Sector:
     type: object
