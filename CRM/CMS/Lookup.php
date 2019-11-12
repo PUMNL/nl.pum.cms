@@ -46,16 +46,16 @@ SQL;
 
   public function countries()
   {
-    $result = [];
     $dao = CRM_Core_DAO::executeQuery('select id, iso_code, name from civicrm_country');
+    $rest = new CRM_CMS_Rest();
     while($dao->fetch()){
-      $result[] = [
-         'country_id' => $dao->id,
+      $result = [
+         //'country_id' => $dao->id,
          'iso_code'   => $dao->iso_code,
          'name'       => $dao->name,
       ];
+      $rest->create('Country',$result);
     }
-    return $result;
   }
 
   public function sectors()
@@ -63,7 +63,7 @@ SQL;
     $result = [];
     $dao = CRM_Core_DAO::executeQuery('select id, label from civicrm_segment where is_active=1');
     while($dao->fetch()){
-      $result[] = [
+      $result =  [
         'segment_id' => $dao->id,
         'name'       => $dao->label,
       ];
