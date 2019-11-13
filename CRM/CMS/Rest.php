@@ -40,7 +40,6 @@ class CRM_CMS_Rest {
   public function put($path,$message){
 
     $data_string = json_encode($message);
-    print_r($message);
     $ch = curl_init($this->url . $path);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
@@ -48,6 +47,7 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
       'Content-Type: application/json',
       'Content-Length: ' . strlen($data_string),
+      'authorization:  Basic cHVtOnF3ZXJ0eTEyMzQ=',
       'ApiToken: '.$this->token,
     ));
     $result =  curl_exec($ch);
@@ -70,11 +70,32 @@ class CRM_CMS_Rest {
     return json_decode($result,true);
   }
 
-  public function create($entity,$fields) {
+  public function getAll($entity){
+      return $this->get("/api/v1/{$entity}?page_index=0&page_size=1000000");
+  }
 
+  public function create($entity,$fields) {
     $result = $this->post("/api/v1/{$entity}/");
     $id=$result['Id'];
     $fields['Id'] = $id;
     return $this->put("/api/v1/{$entity}/",$fields);
+  }
+
+  public function update($entity,$id,$fields) {
+        $fields['Id'] = $id;
+        return $this->put("/api/v1/{$entity}/",$fields);
+  }
+
+  public function delete($entity,$id){
+      $ch = curl_init($this->url . "/api/v1/{$entity}/{$id}");
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+              'Content-Type: application/json',
+              'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
+              'ApiToken: '.$this->token,
+          )
+      );
+      $result = curl_exec($ch);
   }
 }

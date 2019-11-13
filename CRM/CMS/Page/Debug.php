@@ -10,9 +10,9 @@ class CRM_CMS_Page_Debug extends CRM_Core_Page {
     // Example: Assign a variable for use in a template
     $this->assign('currentTime', date('Y-m-d H:i:s'));
     $rest = new CRM_CMS_Rest();
-    $result = $rest->get('/api/v1/Country/');
+    $r1 = civicrm_api3('Drupalcms','postlookups');
+    $result = $rest->getAll('Representative');
     $this->assign('Items',$result['Items']);
-    $config = CRM_Core_Config::singleton();
     parent::run();
 
   }

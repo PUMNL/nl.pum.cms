@@ -7,6 +7,6 @@
 <p>{ts 1=$currentTime}(In your native language) The current time is %1.{/ts}</p>
 
 {foreach from=$Items item=Item}
-   {$Item.Item.Id} - {$Item.Item.iso_code} - {$Item.Item.name} <br/>
+   {$Item.Item.Id} - {$Item.Item.display_name} - {$Item.Item.contact_id}- {$Item.Item.name} <br/>
 
 {/foreach}
