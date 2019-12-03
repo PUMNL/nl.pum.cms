@@ -1,5 +1,4 @@
 <?php
-use CRM_CMS_ExtensionUtil as E;
 
 /**
  * Collection of upgrade steps.
@@ -24,14 +23,38 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
    * created during the installation (e.g., a setting or a managed entity), do
    * so here to avoid order of operation problems.
    */
-  public function postInstall() {
+
+  public function postInstall(){
+     $this->createDrupalCMSJob(
+         'DrupalCms: PostLookups', // name
+         'Post lookup tables to the DrupalCMS with rest call', // description
+         'postlookups',// action
+         'Hourly'// frequency
+     );
+
+      $this->createDrupalCMSJob(
+          'DrupalCms: Getsubmissions', // name
+          'Get information from Drupal CMS an process it in CiviCRM', // description
+          'getsubmissions',// action
+          'Always'// frequency
+      );
+
+      $this->createDrupalCMSJob(
+          'DrupalCms: Remove', // name
+          'Removes the subscriptions from the CMS', // description
+          'remove',// action
+          'Daily'// frequency
+      );
+  }
+
+  private function createDrupalCMSJob($name,$description,$action,$frequency) {
 
     $apiParams = [
-      'name' => 'DrupalCms: PostLookups',
-      'description' => 'Post lookup tables to the DrupalCMS with rest call',
-      'run_frequency' => 'Hourly',
+      'name' => $name,
+      'description' => $description,
+      'run_frequency' => $frequency,
       'api_entity' => 'Drupalcms',
-      'api_action' => 'postlookups',
+      'api_action' => $action,
       'is_active'  => 0,
       'parameters' => '',
     ];
@@ -45,30 +68,7 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
       $apiParams['id'] = $jobId;
     }
 
-    civicrm_api3('Job', 'create', $apiParams
-    );
-
-    $apiParams = [
-      'name' => 'DrupalCms: Getsubmissions',
-      'description' => 'Get information from Drupal CMS an process it in CiviCRM',
-      'run_frequency' => 'Hourly',
-      'api_entity' => 'Drupalcms',
-      'api_action' => 'getsubmissions',
-      'is_active'  => 0,
-      'parameters' => '',
-    ];
-
-    $jobId = CRM_Core_DAO::singleValueQuery('select id from civicrm_job where name=%1',[
-        1 => [$apiParams['name'],'String']
-      ]
-    );
-
-    if($jobId){
-      $apiParams['id'] = $jobId;
-    }
-
-    civicrm_api3('Job', 'create', $apiParams
-    );
+    civicrm_api3('Job', 'create', $apiParams);
   }
 
   /**

@@ -23,10 +23,9 @@ class CRM_CMS_Rest {
   }
 
   public function post($path){
-    //$data_string = json_encode($message);
+
     $ch = curl_init($this->url . $path);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    //curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
@@ -34,6 +33,10 @@ class CRM_CMS_Rest {
         'ApiToken: '.$this->token,
         ));
     $result = curl_exec($ch);
+    $httpResponse = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    if($httpResponse!=200){
+        throw new Exception('POST '.$this->url . $path. 'does not return a 200 https response ');
+    }
     return json_decode($result,true);
   }
 

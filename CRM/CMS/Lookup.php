@@ -112,4 +112,39 @@ SQL;
             };
         }
     }
+
+    public function optionValues()
+    {
+        $sql=<<<SQL
+        select ov.value
+        ,      ov.weight
+        ,      ov.label
+        ,      'first_contact_with_pum'as `group`
+        from   civicrm_option_value ov
+        join   civicrm_option_group og on (og.id = ov.option_group_id)
+        where  og.name= 'first_contact_with_pum_via_20141103154142' and ov.is_active=1
+SQL;
+        set_time_limit(0);
+        $rest = new CRM_CMS_Rest();
+        $remote = $rest->getAll('OptionValue');
+        $remoteOptionValues = [];
+        foreach ($remote['Items'] as $key => $item) {
+            $remoteOptionValues[$item['Item']['value']] = $item['Item']['Id'];
+        }
+        $dao = CRM_Core_DAO::executeQuery($sql);
+        while ($dao->fetch()) {
+            $result = [
+                'value' => $dao->value,
+                'weight' => $dao->weight,
+                'label'  => $dao->label,
+                'group'  => $dao->group,
+            ];
+            if(key_exists($dao->value,$remoteOptionValues)){
+                $rest->update('OptionValue',$remoteOptionValues[$dao->value],$result);
+                unset($remoteOptionValues[$dao->sector_id]);
+            } else {
+                $rest->create('OptionValue',$result);
+            };
+        }
+    }
 }
