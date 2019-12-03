@@ -81,8 +81,39 @@ class CRM_CMS_SubmissionProcessor {
     $this->config = CRM_Newcustomer_Config::singleton();
   }
 
-  function processNewsLetterSubscription($subscription){
+    function checkIfProcessed($submissionId, $entity)
+    {
+        return CRM_Core_DAO::singleValueQuery('select id from pum_cms_submission where submission_id=%1 and entity = %2', [
+            1 => [$submissionId, 'Integer'],
+            2 => [$entity, 'String']
+        ]);
+    }
 
+    function setProcessed($submissionId, $entity)
+    {
+        CRM_Core_DAO::executeQuery('insert into pum_cms_submission(entity,submission_id) values (%1,%2)', [
+            2 => [$submissionId, 'Integer'],
+            1 => [$entity, 'String']
+        ]);
+    }
+
+
+    function process()
+    {
+        $entity = 'NewsletterSubscription';
+        $rest = new CRM_CMS_Rest();
+        $result = $rest->getAll($entity);
+        foreach ($result['Items'] as $item) {
+            if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+                // do nothing already processed
+            } else {
+                $this->processNewsLetterSubscription($item['Item']);
+                $this->setProcessed($item['Item']['Id'], $entity);
+             };
+        }
+    }
+
+  function processNewsLetterSubscription($subscription){
       $apiParams = [
         'first_name' => $subscription['first_name'],
         'middle_name' => $subscription['middle_name'],
@@ -91,14 +122,11 @@ class CRM_CMS_SubmissionProcessor {
         'email' => $subscription['email'],
       ];
       $result = civicrm_api3('Contact','create',$apiParams);
-
       $contactId = $result['id'];
-
       civicrm_api3('GroupContact','create',[
          'contact_id' => $contactId,
          'group_id'   => $this->newsLetterGroupId
       ]);
-
   }
 
   function processExpertApplication($application){

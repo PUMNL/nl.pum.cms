@@ -1,7 +1,6 @@
 <?php
 
 require_once 'cms.civix.php';
-use CRM_CMS_ExtensionUtil as E;
 
 /**
  * Implements hook_civicrm_config().
@@ -132,5 +131,23 @@ function cms_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
  */
 function cms_civicrm_entityTypes(&$entityTypes) {
   _cms_civix_civicrm_entityTypes($entityTypes);
+}
+
+function cms_civicrm_navigationMenu( &$params ) {
+    $item = array(
+        "name" => ts('CMS Drupal Api'),
+        "url" => "civicrm/cms/preferences",
+        "permission" => "administer CiviCRM",
+    );
+    _cms_civix_insert_navigation_menu($params, "Administer/System Settings", $item);
+}
+
+function cms_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = [], $context = null){
+   if(isset($tokens['cms'])){
+       if(in_array('api_error',$tokens['cms'])){
+          $mailError = new CRM_CMS_MailError();
+          $values['cms.api_error'] = $mailError->getError();
+       }
+   }
 }
 

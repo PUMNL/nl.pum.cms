@@ -1,7 +1,4 @@
 <?php
-
-// AUTO-GENERATED FILE -- Civix may overwrite any changes made to this file
-
 /**
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
