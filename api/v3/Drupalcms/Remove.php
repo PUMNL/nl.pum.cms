@@ -13,6 +13,7 @@ function civicrm_api3_Drupalcms_remove($params)
 {
     $returnValues = [];
     $rest = new CRM_CMS_Rest();
+    $count = 0;
 
     $dao = CRM_Core_DAO::executeQuery('select id, entity, submission_id from pum_cms_submission');
     while($dao->fetch()){
@@ -20,7 +21,8 @@ function civicrm_api3_Drupalcms_remove($params)
         CRM_Core_DAO::executeQuery('delete from pum_cms_submission where id=%1',[
             1 => [$dao->id,'Integer'],
         ]);
+        $count++;
     }
-
+    $return['count']= $count;
     return civicrm_api3_create_success($returnValues, $params, 'Drupalcms', 'PostLookups');
 }
