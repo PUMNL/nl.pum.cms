@@ -17,17 +17,14 @@ class CRM_CMS_Page_Debug extends CRM_Core_Page {
     // Example: Assign a variable for use in a template
     $this->assign('currentTime', date('Y-m-d H:i:s'));
     $rest = new CRM_CMS_Rest();
-  //  $r1 = civicrm_api3('Drupalcms','postlookups');
-  //    $lookup = new CRM_CMS_Lookup();
-  //    $lookup->optionValues();
-  //  $result = $rest->getAll('NewsletterSubscription');
-  //  $this->assign('Items',$result['Items']);
 
-  //  $submissionProcessor = new CRM_CMS_SubmissionProcessor();
-  //  $submissionProcessor->process();
 
-    $upgrader =  new  CRM_CMS_Upgrader();
-    $upgrader->postInstall();
+ //     $result = $rest->getAll('NewsletterSubscription');
+ //     $this->assign('Items',$result['Items']);
+
+    $submissionProcessor = new CRM_CMS_SubmissionProcessor();
+    $submissionProcessor->createExpertCase(35541);
+
     parent::run();
 
   }
