@@ -1,4 +1,10 @@
 <?php
+/**
+ * @author Klaas Eikelboom  <klaas@kainuk.it>
+ * @date 06-Dec-2019
+ * @license  AGPL-3.0
+ */
+
 class CRM_CMS_Form_Preferences extends CRM_Core_Form {
 
 

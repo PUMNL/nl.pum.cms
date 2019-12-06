@@ -1,11 +1,9 @@
 <?php
-
 /**
  * @author Klaas Eikelboom  <klaas@kainuk.it>
  * @date 15-Oct-2019
  * @license AGPL-3.0
  */
-
 class CRM_CMS_Lookup {
 
   public function representatives()

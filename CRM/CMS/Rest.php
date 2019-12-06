@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author Klaas Eikelboom  <klaas@kainuk.it>
  * @date 15-Oct-2019
@@ -13,8 +14,6 @@ class CRM_CMS_Rest {
 
   /**
    * CRM_CMS_Rest constructor.
-   *
-   * @param $url
    */
   public function __construct() {
     $cmsSettings = CRM_Core_BAO_Setting::getItem('Drupal CMS Api');

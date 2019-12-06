@@ -1,4 +1,9 @@
 <?php
+/**
+ * @author Klaas Eikelboom  <klaas@kainuk.it>
+ * @date 06-Dec-2019
+ * @license  AGPL-3.0
+ */
 
 /**
  * Collection of upgrade steps.

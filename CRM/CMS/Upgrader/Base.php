@@ -1,5 +1,11 @@
 <?php
 /**
+ * @author Klaas Eikelboom  <klaas@kainuk.it>
+ * @date 06-Dec-2019
+ * @license  AGPL-3.0
+ */
+
+/**
  * Base class which provides helpers to execute upgrade logic
  */
 class CRM_CMS_Upgrader_Base {

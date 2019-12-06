@@ -4,13 +4,6 @@
  * @date 16-Oct-2019
  * @license AGPL-3.0
  */
-
-/**
- * @author Klaas Eikelboom  <klaas@kainuk.it>
- * @date 16-Oct-2019
- * @license AGPL-3.0
- */
-
 class CRM_CMS_SubmissionProcessor {
 
   var $newsLetterGroupId;
