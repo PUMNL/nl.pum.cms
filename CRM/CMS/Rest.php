@@ -29,12 +29,10 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
         'ApiToken: '.$this->token,
+        'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
         ));
     $result = curl_exec($ch);
-    $httpResponse = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    if($httpResponse!=200){
-        throw new Exception('POST '.$this->url . $path. 'does not return a 200 https response ');
-    }
+    $this->checkResponse($path, $ch);
     return json_decode($result,true);
   }
 
@@ -49,6 +47,7 @@ class CRM_CMS_Rest {
       'Content-Type: application/json',
       'Content-Length: ' . strlen($data_string),
       'ApiToken: '.$this->token,
+      'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
     ));
     $result =  curl_exec($ch);
     return json_decode($result,true);
@@ -62,15 +61,36 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
+        'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
         'ApiToken: '.$this->token,
       )
     );
+
     $result = curl_exec($ch);
+    $this->checkResponse($path, $ch);
     return json_decode($result,true);
   }
 
   public function getAll($entity){
       return $this->get("/api/v1/{$entity}?page_index=0&page_size=1000000");
+  }
+
+  public function getBlob($path, $file){
+      $ch = curl_init($this->url . $path);
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+              'Content-Type: application/json',
+              'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
+              'ApiToken: '.$this->token,
+          )
+      );
+      $result = curl_exec($ch);
+      $image = json_decode($result,true)['Content'];
+      $start = strpos($image,',');
+      file_put_contents($file, base64_decode(substr($image,$start+1)));
+      $this->checkResponse($path, $ch);
+      return $file;
   }
 
   public function create($entity,$fields) {
@@ -92,8 +112,23 @@ class CRM_CMS_Rest {
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
               'ApiToken: '.$this->token,
+              'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
           )
       );
       $result = curl_exec($ch);
+      $this->checkResponse($this->url . "/api/v1/{$entity}/{$id}", $ch);
   }
+
+    /**
+     * @param $path
+     * @param $ch
+     * @throws Exception
+     */
+    public function checkResponse($path, $ch)
+    {
+        $httpResponse = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($httpResponse != 200) {
+            throw new Exception('POST ' . $this->url . $path . 'does not return a 200 https response ');
+        }
+    }
 }
