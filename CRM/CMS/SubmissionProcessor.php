@@ -13,66 +13,68 @@ class CRM_CMS_SubmissionProcessor {
   var $website_type_id;
   var $facebook_type_id;
   var $mobile_type_id;
-  var $genderTable;
+  var $genderTable = [];
+  var $prefixTable = [];
   var $skype_custom_id;
+  var $initials_custom_id;
+  var $first_contact_custom_id;
+  var $relationship_type_id;
+  var $case_type_id;
+  var $case_status_id;
+  var $medium_id;
 
-  /**
-   * CRM_CMS_SubmissionProcessor constructor.
-   */
-  public function __construct() {
-    $this->newsLetterGroupId = civicrm_api3('Group','getvalue',[
-         'name' => 'Newsletter_partners_38',
-         'return' => 'id'
-      ]
-    );
-    $this->postal_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
-      'return' => 'id',
-      'name' => 'Postaladdress',
-    ]);
-    $this->work_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
-      'return' => 'id',
-      'name' => 'Work',
-    ]);
+    /**
+     * CRM_CMS_SubmissionProcessor constructor.
+     */
+    public function __construct()
+    {
+        $this->newsLetterGroupId = civicrm_api3('Group', 'getvalue', [
+                'name' => 'Newsletter_partners_38',
+                'return' => 'id'
+            ]
+        );
 
-    $websiteGroupId = civicrm_api3('OptionGroup','getvalue',[
-      'return' => 'id',
-      'name'   => 'website_type',
-    ]);
+        $this->postal_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
+            'return' => 'id',
+            'name' => 'Postaladdress',
+        ]);
 
-    $this->website_type_id = civicrm_api3('OptionValue','getvalue',[
-      'return' => 'value',
-      'name' => 'Work',
-      'option_group_id'   => $websiteGroupId,
-    ]);
+        $this->work_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
+            'return' => 'id',
+            'name' => 'Work',
+        ]);
 
-    $this->facebook_type_id = civicrm_api3('OptionValue','getvalue',[
-      'return' => 'value',
-      'name' => 'Facebook',
-      'option_group_id'   => $websiteGroupId,
-    ]);
+        $this->website_type_id = $this->findOptionValue('website_type', 'Work');
+        $this->facebook_type_id = $this->findOptionValue('website_type', 'Facebook');
+        $this->mobile_type_id = $this->findOptionValue('phone_type', 'Mobile');
 
-    $phoneGroupId = civicrm_api3('OptionGroup','getvalue',[
-      'return' => 'id',
-      'name'   => 'phone_type',
-    ]);
+        $this->genderTable = [
+            'male' => 2, 'female' => 1
+        ];
 
-    $this->mobile_type_id = civicrm_api3('OptionValue','getvalue',[
-      'return' => 'value',
-      'name' => 'Mobile',
-      'option_group_id'   => $phoneGroupId,
-    ]);
+        $prefixes = civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix']);
+        foreach ($prefixes['values'] as $value) {
+            $this->prefixTable[$value['label']] = $value['value'];
+        }
 
-    $this->genderTable = [
-      'male'=>2,'female'=>1
-    ];
+        $this->skype_custom_id = $this->findCustomFieldId('Skype_Name');
+        $this->initials_custom_id = $this->findCustomFieldId('Initials');
+        $this->first_contact_custom_id = $this->findCustomFieldId('First_contact_with_PUM_via');
 
-    $this->skype_custom_id = civicrm_api3('CustomField','getvalue',[
-      'return' => 'id',
-      'name'   => 'Skype_Name',
-    ]);
+        $this->relationship_type_id = civicrm_api3('RelationshipType', 'getvalue', [
+            'return' => 'id',
+            'name_a_b' => 'Has authorised',
+        ]);
 
-    $this->config = CRM_Newcustomer_Config::singleton();
+        $this->case_type_id =  $this->findOptionValue('case_type','Expertapplication');
+        $this->case_status_id =  $this->findOptionValue('case_status','Assess CV');
+        $this->medium_id =  $this->findOptionValue('encounter_medium','Webform');
+    }
+
+  function formatDate($dateString){
+      return substr($dateString,0,4).substr($dateString,5,2).substr($dateString,8,2);
   }
+
 
     function checkIfProcessed($submissionId, $entity)
     {
@@ -93,8 +95,9 @@ class CRM_CMS_SubmissionProcessor {
 
     function process()
     {
-        $entity = 'NewsletterSubscription';
         $rest = new CRM_CMS_Rest();
+        /*
+        $entity = 'NewsLetterSubscription';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
             if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
@@ -103,6 +106,32 @@ class CRM_CMS_SubmissionProcessor {
                 $this->processNewsLetterSubscription($item['Item']);
                 $this->setProcessed($item['Item']['Id'], $entity);
              };
+        }*/
+
+        $entity = 'ClientRegistration';
+        $result = $rest->getAll($entity);
+        foreach ($result['Items'] as $item) {
+        //    $this->processClientRegistration($item['Item']);
+        /*    if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+                // do nothing already processed
+            } else {
+
+                $this->setProcessed($item['Item']['Id'], $entity);
+            };
+        */
+        }
+
+        $entity = 'ExpertApplication';
+        $result = $rest->getAll($entity);
+        foreach ($result['Items'] as $item) {
+
+            if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+                // do nothing already processed
+            } else {
+                $this->processExpertApplication($item['Item']);
+                $this->setProcessed($item['Item']['Id'], $entity);
+            };
+
         }
     }
 
@@ -124,45 +153,70 @@ class CRM_CMS_SubmissionProcessor {
 
   function processExpertApplication($application){
 
+      $config = CRM_Core_Config::singleton();
+      $customUploadDir = $config->customFileUploadDir;
+      $rest = new CRM_CMS_Rest();
+
+
+      $apiParams = [
+          'first_name' => $application['first_name'],
+          'last_name' => $application['last_name'],
+          'contact_type'      => 'Individual',
+          'contact_sub_type'  => 'Expert',
+          'source'            => 'New Customer - form drupal CMS'
+      ];
+
+      if(isset($application['initials'])){
+          $apiParams['custom_'.$this->initials_custom_id] = $application['initials'];
+      }
+
+      if(isset($application['first_contact'])){
+          $apiParams['custom_'.$this->first_contact_custom_id] = $application['first_contact'];
+      }
+
+      if(isset($application['birth_date'])){
+          $apiParams['birth_date'] = $this->formatDate($application['birth_date']);
+      }
+
+      if(isset($application['name_prefix']) && key_exists($application['name_prefix'],$this->prefixTable)){
+          $apiParams['prefix_id'] = $this->prefixTable[$application['name_prefix']];
+      }
+
+      if(isset($application['email'])) {
+          $apiParams['email'] = $application['email'];
+      }
+
+      if(isset($application['phone'])) {
+          $apiParams['phone'] = $application['phone'];
+      }
+
+      $uuid = uniqid();
+      $rest->getBlob("/api/v1/ExpertApplication/{$application['Id']}/photo",$customUploadDir."photo_{$uuid}.jpg");
+      $apiParams[ 'image_URL'] = CRM_Utils_System::url('civicrm/contact/imagefile', ['photo' => "photo_{$uuid}.jpg"], true);
+
+      $result = civicrm_api3('Contact','create',$apiParams);
+
   }
 
-  /*
+  function createExpertCase($contactId){
 
-   {
-  "organization_name": "string",
-  "visit_address": {
-    "street_address": "string",
-    "postal_code": "string",
-    "city": "string",
-    "country_id": 0
-  },
-  "postal_address": {
-    "street_address": "string",
-    "postal_code": "string",
-    "city": "string",
-    "country_id": 0
-  },
-  "phone": "string",
-  "phone_2": "string",
-  "website": "string",
-  "facebook": "string",
-  "agreement_terms_and_conditions": "Y",
-  "representative_id": 0,
-  "gender": "female",
-  "first_name": "string",
-  "last_name": "string",
-  "contact_phone": "string",
-  "skype_name": "string",
-  "contact_email": "string",
-  "job_title": "string",
-  "newsletter_subscription": "Y"
-}
+      $result = civicrm_api3('Case', 'create', [
+          'contact_id' => $contactId,
+          'case_type_id' => $this->case_type_id,
+          'status_id' => $this->case_status_id,
+          'subject' => "Case voor Klaas",
+          'creator_id' => $contactId,
+          'medium_id' => $this->medium_id,
+      ]);
 
-   */
+  }
+
 
   function processClientRegistration($registration){
 
-    /*
+    unset($registration['visit_address']);
+    unset($registration['postal_address']);
+
     $apiParams = [
       'organization_name' => $registration['organization_name'],
       'contact_type'      => 'Organization',
@@ -256,7 +310,7 @@ class CRM_CMS_SubmissionProcessor {
         'website_type_id' => $this->facebook_type_id
       ];
       civicrm_api3('Website','create',$apiParams);
-    }*/
+    }
 
     $apiParams = [
        'first_name' => $registration['first_name'],
@@ -264,6 +318,7 @@ class CRM_CMS_SubmissionProcessor {
        'gender_id' => $this->genderTable[$registration['gender']],
        'contact_type' => 'Individual',
        'job_title' => $registration['job_title'],
+       'source'    => 'New Customer - form drupal CMS'
     ];
 
     if(isset($registration['skype_name'])){
@@ -280,8 +335,52 @@ class CRM_CMS_SubmissionProcessor {
 
     $result = civicrm_api3('Contact','create',$apiParams);
     $contactId = $result['id'];
-    print_r($contactId);
+
+    // create the authorized contact relation
+
+    civicrm_api3('Relationship','create',[
+        'contact_id_a' => $organizationId,
+        'contact_id_b' => $contactId,
+        'relationship_type_id' => $this->relationship_type_id,
+    ]);
 
   }
+
+    /**
+     * @param $groupName
+     * @param $optionLabel
+     * @return array
+     * @throws CiviCRM_API3_Exception
+     */
+    public function findOptionValue($groupName, $optionLabel)
+    {
+        $websiteGroupId = civicrm_api3('OptionGroup', 'getvalue', [
+            'return' => 'id',
+            'name' => $groupName,
+        ]);
+        $optionFieldValue = civicrm_api3('OptionValue', 'getvalue', [
+            'return' => 'value',
+            'name' => $optionLabel,
+            'option_group_id' => $websiteGroupId,
+        ]);
+        if(!$optionFieldValue){
+            throw new Exception("{$optionLabel} in {$groupName} not found");
+        }
+        return $optionFieldValue;
+    }
+
+    /**
+     * @param $customFieldName
+     * @return array
+     * @throws CiviCRM_API3_Exception
+     */
+    public function findCustomFieldId($customFieldName)
+    {
+        $customFieldId = civicrm_api3('CustomField', 'getvalue', [
+            'return' => 'id',
+            'name' => $customFieldName,
+        ]);
+        return $customFieldId;
+    }
 
 }
