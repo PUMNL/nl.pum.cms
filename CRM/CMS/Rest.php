@@ -29,7 +29,6 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
         'ApiToken: '.$this->token,
-        'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
         ));
     $result = curl_exec($ch);
     $this->checkResponse($path, $ch);
@@ -47,7 +46,6 @@ class CRM_CMS_Rest {
       'Content-Type: application/json',
       'Content-Length: ' . strlen($data_string),
       'ApiToken: '.$this->token,
-      'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
     ));
     $result =  curl_exec($ch);
     return json_decode($result,true);
@@ -61,7 +59,6 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
-        'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
         'ApiToken: '.$this->token,
       )
     );
@@ -81,7 +78,6 @@ class CRM_CMS_Rest {
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
-              'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
               'ApiToken: '.$this->token,
           )
       );
@@ -112,7 +108,6 @@ class CRM_CMS_Rest {
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
               'ApiToken: '.$this->token,
-              'authorization: Basic cHVtOnF3ZXJ0eTEyMzQ=',
           )
       );
       $result = curl_exec($ch);
