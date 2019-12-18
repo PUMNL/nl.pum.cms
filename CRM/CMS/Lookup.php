@@ -96,7 +96,7 @@ SQL;
             $remoteSectors[$item['Item']['sector_id']] = $item['Item']['Id'];
         }
 
-        $dao = CRM_Core_DAO::executeQuery('select id as sector_id, label from civicrm_segment where is_active=1');
+        $dao = CRM_Core_DAO::executeQuery('select id as sector_id, label from civicrm_segment where is_active=1 and parent_id is null order by label');
         while ($dao->fetch()) {
             $result = [
                 'sector_id' => $dao->sector_id,
