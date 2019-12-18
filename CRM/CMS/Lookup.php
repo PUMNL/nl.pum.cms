@@ -52,6 +52,10 @@ SQL;
         };
     }
 
+    foreach ($remoteReps as $remoteRepsId) {
+        $rest->delete('Representative', $remoteRepsId);
+    }
+
   }
 
   public function countries()
@@ -108,6 +112,10 @@ SQL;
             } else {
                 $rest->create('Sector',$result);
             };
+        }
+
+        foreach ($remoteSectors as $remoteSectorId) {
+            $rest->delete('Representative', $remoteSectorId);
         }
     }
 
