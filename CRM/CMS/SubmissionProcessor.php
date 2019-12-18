@@ -254,8 +254,12 @@ class CRM_CMS_SubmissionProcessor
     function processClientRegistration($registration)
     {
 
-        unset($registration['visit_address']);
-        unset($registration['postal_address']);
+        if(isset($registration['visit_address'])){
+            $registration['visit_address'] = json_decode($registration['visit_address'],true);
+        };
+        if(isset($registration['postal_address'])){
+            $registration['postal_address'] = json_decode($registration['postal_address'],true);
+        };
 
         $apiParams = [
             'organization_name' => $registration['organization_name'],
