@@ -8,7 +8,7 @@
 class CRM_CMS_Form_Preferences extends CRM_Core_Form {
 
 
-    private $keys = ['drupal_cms_url', 'drupal_cms_authtoken', 'drupal_cms_contact_id', 'drupal_cms_template_id'];
+    private $keys = ['drupal_cms_url', 'drupal_cms_authtoken', 'drupal_cms_contact_id', 'drupal_cms_template_id','drupal_cms_basicauth'];
 
     private function mailTemplates()
     {
@@ -36,6 +36,14 @@ class CRM_CMS_Form_Preferences extends CRM_Core_Form {
             'text', // field type
             'drupal_cms_authtoken', // field name
             ts('Authorization token for the Remote call'), // field label
+            ['size' => 64], // attributes
+            true, // is required
+            null
+        );
+        $this->add(
+            'text', // field type
+            'drupal_cms_basicauth', // field name
+            ts('Authorization token for basic authentication (Should be obsolete in remote release)'), // field label
             ['size' => 64], // attributes
             true, // is required
             null

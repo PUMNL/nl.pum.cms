@@ -11,6 +11,7 @@ class CRM_CMS_Rest {
   // echo CRM_Core_BAO_Setting::getItem('Drupal CMS Api','drupal_cms_url');
   var $url;
   var $token;
+  var $basicauth;
 
   /**
    * CRM_CMS_Rest constructor.
@@ -19,6 +20,7 @@ class CRM_CMS_Rest {
     $cmsSettings = CRM_Core_BAO_Setting::getItem('Drupal CMS Api');
     $this->url=$cmsSettings['drupal_cms_url'];
     $this->token=$cmsSettings['drupal_cms_authtoken'];
+    $this->basicauth=$cmsSettings['drupal_cms_basicauth'];
   }
 
   public function post($path){
@@ -45,6 +47,7 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
       'Content-Type: application/json',
       'Content-Length: ' . strlen($data_string),
+      'authorization: Basic '.$this->basicauth,
       'ApiToken: '.$this->token,
     ));
     $result =  curl_exec($ch);
@@ -59,6 +62,7 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
+        'authorization: Basic '.$this->basicauth,
         'ApiToken: '.$this->token,
       )
     );
@@ -79,6 +83,7 @@ class CRM_CMS_Rest {
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
               'ApiToken: '.$this->token,
+              'authorization: Basic '.$this->basicauth,
           )
       );
       $result = curl_exec($ch);
@@ -108,6 +113,7 @@ class CRM_CMS_Rest {
       curl_setopt($ch, CURLOPT_HTTPHEADER, array(
               'Content-Type: application/json',
               'ApiToken: '.$this->token,
+              'authorization: Basic '.$this->basicauth,
           )
       );
       $result = curl_exec($ch);
