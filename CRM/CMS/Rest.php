@@ -30,6 +30,7 @@ class CRM_CMS_Rest {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Content-Type: application/json',
+        'authorization: Basic '.$this->basicauth,
         'ApiToken: '.$this->token,
         ));
     $result = curl_exec($ch);
@@ -128,7 +129,7 @@ class CRM_CMS_Rest {
     public function checkResponse($path, $ch)
     {
         $httpResponse = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($httpResponse != 200) {
+        if ($httpResponse != 200 && $httpResponse != 401) {
             throw new Exception('REST Call ' . $this->url . $path . 'does not return a 200 https response ');
         }
     }

@@ -12,6 +12,7 @@ class CRM_CMS_SubmissionProcessor
     var $config;
     var $postal_loc_type_id;
     var $work_loc_type_id;
+    var $main_loc_type_id;
     var $website_type_id;
     var $facebook_type_id;
     var $mobile_type_id;
@@ -36,16 +37,9 @@ class CRM_CMS_SubmissionProcessor
             ]
         );
 
-        $this->postal_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
-            'return' => 'id',
-            'name' => 'Postaladdress',
-        ]);
-
-        $this->work_loc_type_id = civicrm_api3('LocationType', 'getvalue', [
-            'return' => 'id',
-            'name' => 'Work',
-        ]);
-
+        $this->postal_loc_type_id = $this->findLocationTypeId('Postaladdress');
+        $this->work_loc_type_id = $this->findLocationTypeId('Work');
+        $this->main_loc_type_id = $this->findLocationTypeId('Main');
         $this->website_type_id = $this->findOptionValue('website_type', 'Work');
         $this->facebook_type_id = $this->findOptionValue('website_type', 'Facebook');
         $this->mobile_type_id = $this->findOptionValue('phone_type', 'Mobile');
@@ -130,11 +124,10 @@ class CRM_CMS_SubmissionProcessor
         $entity = 'ClientRegistration';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
-            $this->processClientRegistration($item['Item']);
             if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
                 // do nothing already processed
             } else {
-
+                $this->processClientRegistration($item['Item']);
                 $this->setProcessed($item['Item']['Id'], $entity);
             };
         }
@@ -195,8 +188,10 @@ class CRM_CMS_SubmissionProcessor
         $apiParams = [
             'first_name' => $application['first_name'],
             'last_name' => $application['last_name'],
+            'middle_name' => $application['middle_name'],
             'contact_type' => 'Individual',
             'contact_sub_type' => 'Expert',
+            'gender_id' => $this->genderTable[$application['gender']],
             'source' => 'New Customer - form drupal CMS'
         ];
 
@@ -241,6 +236,10 @@ class CRM_CMS_SubmissionProcessor
                 'country_id' => $application['home_address']['country_id']
             ];
             civicrm_api3('Address', 'create', $apiParams);
+        }
+
+        if(isset($application['sector_id'])){
+            $this->addSector($result['id'],$application['sector_id']);
         }
 
         $this->createExpertCase($result['id']);
@@ -340,20 +339,20 @@ class CRM_CMS_SubmissionProcessor
             $apiParams = [
                 'contact_id' => $organizationId,
                 'location_type_id' => $this->work_loc_type_id,
-                'email' => $registration['phone'],
+                'email' => $registration['email'],
                 'is_primary' => 0
             ];
             civicrm_api3('Email', 'create', $apiParams);
         }
 
-        if (isset($registration['email'])) {
+        if (isset($registration['phone'])) {
             $apiParams = [
                 'contact_id' => $organizationId,
                 'location_type_id' => $this->work_loc_type_id,
-                'email' => $registration['phone'],
+                'phone' => $registration['phone'],
                 'is_primary' => 0
             ];
-            civicrm_api3('Email', 'create', $apiParams);
+            civicrm_api3('Phone', 'create', $apiParams);
         }
 
         if (isset($registration['website'])) {
@@ -387,24 +386,34 @@ class CRM_CMS_SubmissionProcessor
             $apiParams['custom_' . $this->skype_custom_id] = $registration['skype_name'];
         }
 
-        if (isset($registration['contact_phone'])) {
-            $apiParams['phone'] = $registration['contact_phone'];
-        }
-
-        if (isset($registration['contact_email'])) {
-            $apiParams['email'] = $registration['contact_email'];
-        }
-
         $result = civicrm_api3('Contact', 'create', $apiParams);
         $contactId = $result['id'];
 
         // create the authorized contact relation
 
-        civicrm_api3('Relationship', 'create', [
+        if (isset($registration['contact_phone'])) {
+            civicrm_api3('Phone', 'create', [
+                'contact_id' => $contactId,
+                'location_type_id' => $this->main_loc_type_id,
+                'phone' => $registration['contact_phone'],
+            ]);
+        }
+
+        if (isset($registration['contact_email'])) {
+            civicrm_api3('Email', 'create', [
+                'contact_id' => $contactId,
+                'location_type_id' => $this->home_loc_type_id,
+                'email' => $registration['contact_email'],
+            ]);
+        }
+
+        $result = civicrm_api3('Relationship', 'create', [
             'contact_id_a' => $organizationId,
             'contact_id_b' => $contactId,
             'relationship_type_id' => $this->relationship_type_id,
         ]);
+
+
     }
 
     /**
@@ -443,5 +452,33 @@ class CRM_CMS_SubmissionProcessor
         ]);
         return $customFieldId;
     }
+
+    public function addSector($contactId,$sectorId){
+
+        civicrm_api3('ContactSegment','create',[
+            'contact_id' => $contactId,
+            'segment_id' => $sectorId,
+            'role_value' => 'Expert',
+            'is_main' => 1,
+            'is_active' => 1,
+            'start_date' => date('Ymd'),
+        ]);
+
+    }
+
+    /**
+     * @param $locationName
+     * @return array
+     * @throws CiviCRM_API3_Exception
+     */
+    public function findLocationTypeId($locationName)
+    {
+        $civicrm_api3 = civicrm_api3('LocationType', 'getvalue', [
+            'return' => 'id',
+            'name' => $locationName,
+        ]);
+        return $civicrm_api3;
+    }
+
 
 }

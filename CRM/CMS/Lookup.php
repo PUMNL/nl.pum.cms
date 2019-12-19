@@ -6,6 +6,17 @@
  */
 class CRM_CMS_Lookup {
 
+  var $countryGroupId;
+
+    public function __construct()
+    {
+        $this->countryGroupId = civicrm_api3('Group', 'getvalue', [
+                'title' => 'Active countries',
+                'return' => 'id'
+            ]
+        );
+    }
+
   public function representatives()
   {
     $config = CRM_Newcustomer_Config::singleton();
@@ -19,6 +30,7 @@ class CRM_CMS_Lookup {
      FROM civicrm_contact rep
      JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND is_active=1
      JOIN civicrm_contact cntr ON (cr.contact_id_a = cntr.id) AND cntr.contact_type = 'Organization' AND cntr.contact_sub_type LIKE '%Country%'
+     JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2)    
      LEFT JOIN civicrm_email em ON (rep.id = em.contact_id AND em.is_primary = 1)
      LEFT JOIN civicrm_phone ph ON (rep.id = ph.contact_id AND ph.is_primary = 1)
      LEFT JOIN civicrm_address adr ON (rep.id = adr.contact_id AND adr.is_primary = 1)
@@ -32,7 +44,8 @@ SQL;
           $remoteReps[$item['Item']['contact_id']] = $item['Item']['Id'];
       }
     $dao = CRM_Core_DAO::executeQuery($sql,[
-       1 => [$config->getRepresepentativeRelationshipTypeId(),'Integer']
+       1 => [$config->getRepresepentativeRelationshipTypeId(),'Integer'],
+       2 => [$this->countryGroupId,'Integer'],
       ]
       );
     while($dao->fetch()){
@@ -107,15 +120,18 @@ SQL;
                 'name' => $dao->label,
             ];
             if(key_exists($dao->sector_id,$remoteSectors)){
-                $rest->update('Sector',$remoteSectors[$dao->sector_id],$result);
+                echo "update {$dao->label}  \n";
+              //  $rest->update('Sector',$remoteSectors[$dao->sector_id],$result);
                 unset($remoteSectors[$dao->sector_id]);
             } else {
-                $rest->create('Sector',$result);
+                echo "create {$dao->label}  \n";
+              //  $rest->create('Sector',$result);
             };
         }
 
         foreach ($remoteSectors as $remoteSectorId) {
-            $rest->delete('Representative', $remoteSectorId);
+            echo "Delete $remoteSectorId \n";
+            $rest->delete('Sector', $remoteSectorId);
         }
     }
 

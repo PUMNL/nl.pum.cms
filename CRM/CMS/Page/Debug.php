@@ -23,7 +23,11 @@ class CRM_CMS_Page_Debug extends CRM_Core_Page {
  //     $this->assign('Items',$result['Items']);
 
     $submissionProcessor = new CRM_CMS_SubmissionProcessor();
-    $submissionProcessor->createExpertCase(35541);
+      $entity = 'ClientRegistration';
+      $result = $rest->getAll($entity);
+      foreach ($result['Items'] as $item) {
+          $submissionProcessor->processClientRegistration($item['Item']);
+      }
 
     parent::run();
 
