@@ -26,6 +26,7 @@ class CRM_CMS_SubmissionProcessor
     var $case_status_id;
     var $medium_id;
     var $motivation_custom_id;
+    var $agreement_custom_id;
 
     /**
      * CRM_CMS_SubmissionProcessor constructor.
@@ -49,6 +50,10 @@ class CRM_CMS_SubmissionProcessor
             'male' => 2, 'female' => 1
         ];
 
+        $this->agreementTable = [
+            'Y' => 'Yes', 'N' => 'No'
+        ];
+
         $prefixes = civicrm_api3('OptionValue', 'get', ['option_group_id' => 'individual_prefix']);
         foreach ($prefixes['values'] as $value) {
             $this->prefixTable[$value['label']] = $value['value'];
@@ -58,6 +63,7 @@ class CRM_CMS_SubmissionProcessor
         $this->initials_custom_id = $this->findCustomFieldId('Initials');
         $this->first_contact_custom_id = $this->findCustomFieldId('First_contact_with_PUM_via');
         $this->motivation_custom_id = $this->findCustomFieldId('motivation_expert_application');
+        $this->agreement_custom_id  = $this->findCustomFieldId('Gentlemen_s_Agreement');
 
         $this->relationship_type_id = civicrm_api3('RelationshipType', 'getvalue', [
             'return' => 'id',
@@ -67,6 +73,7 @@ class CRM_CMS_SubmissionProcessor
         $this->case_type_id = $this->findOptionValue('case_type', 'Expertapplication');
         $this->case_status_id = $this->findOptionValue('case_status', 'Assess CV');
         $this->medium_id = $this->findOptionValue('encounter_medium', 'Webform');
+
     }
 
     /**
@@ -77,7 +84,6 @@ class CRM_CMS_SubmissionProcessor
     {
         return substr($dateString, 0, 4) . substr($dateString, 5, 2) . substr($dateString, 8, 2);
     }
-
 
     /**
      * @param $submissionId
@@ -93,8 +99,8 @@ class CRM_CMS_SubmissionProcessor
     }
 
     /**
-     * @param $submissionId
-     * @param $entity
+     * @param integer $submissionId
+     * @param string $entity
      */
     function setProcessed($submissionId, $entity)
     {
@@ -104,9 +110,8 @@ class CRM_CMS_SubmissionProcessor
         ]);
     }
 
-
     /**
-     *
+     * workhorse of the processing
      */
     function process()
     {
@@ -137,14 +142,12 @@ class CRM_CMS_SubmissionProcessor
         $entity = 'ExpertApplication';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
-
             if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
                 // do nothing already processed
             } else {
                 $this->processExpertApplication($item['Item']);
                 $this->setProcessed($item['Item']['Id'], $entity);
             };
-
         }
     }
 
@@ -178,11 +181,7 @@ class CRM_CMS_SubmissionProcessor
      */
     function processExpertApplication($application)
     {
-
-        $config = CRM_Core_Config::singleton();
-        $customUploadDir = $config->customFileUploadDir;
         $rest = new CRM_CMS_Rest();
-
         if(isset($application['home_address'])){
             $application['home_address'] = json_decode($application['home_address'],true);
         };
@@ -220,8 +219,6 @@ class CRM_CMS_SubmissionProcessor
         if (isset($application['phone'])) {
             $apiParams['phone'] = $application['phone'];
         }
-
-
 
         $result = civicrm_api3('Contact', 'create', $apiParams);
 
@@ -266,7 +263,7 @@ class CRM_CMS_SubmissionProcessor
 
     /**
      * @param $contactId
-     * @return int the id of the case
+     * @return integer the id of the case
      * @throws CiviCRM_API3_Exception
      */
     function createExpertCase($contactId,$motivation)
@@ -317,8 +314,14 @@ class CRM_CMS_SubmissionProcessor
         $apiParams = [
             'organization_name' => $registration['organization_name'],
             'contact_type' => 'Organization',
-            'source' => 'New Customer - form drupal CMS'
+            'contact_sub_type' => 'Customer',
+            'source' => 'New Customer - form drupal CMS',
+            'custom_'.$this->agreement_custom_id => $this->agreementTable[$registration['agreement_terms_and_conditions']],
         ];
+
+        if($registration['agreement_terms_and_conditions']==='Y'){
+            $apiParams['custom_'.$this->agreement_custom_id] ='I Agree';
+        }
 
         $result = civicrm_api3('Contact', 'create', $apiParams);
 
@@ -381,16 +384,6 @@ class CRM_CMS_SubmissionProcessor
             civicrm_api3('Email', 'create', $apiParams);
         }
 
-        if (isset($registration['phone'])) {
-            $apiParams = [
-                'contact_id' => $organizationId,
-                'location_type_id' => $this->work_loc_type_id,
-                'phone' => $registration['phone'],
-                'is_primary' => 0
-            ];
-            civicrm_api3('Phone', 'create', $apiParams);
-        }
-
         if (isset($registration['website'])) {
             $apiParams = [
                 'contact_id' => $organizationId,
@@ -449,6 +442,12 @@ class CRM_CMS_SubmissionProcessor
             'relationship_type_id' => $this->relationship_type_id,
         ]);
 
+        $config = CRM_Newcustomer_Config::singleton();
+        $result = civicrm_api3('Relationship', 'create', [
+            'contact_id_a' => $organizationId,
+            'contact_id_b' => $registration['representative_id'],
+            'relationship_type_id' =>  $config->getRepresepentativeRelationshipTypeId(),
+        ]);
     }
 
     /**
@@ -475,21 +474,24 @@ class CRM_CMS_SubmissionProcessor
     }
 
     /**
-     * @param $customFieldName
-     * @return array
+     * @param string $customFieldName
+     * @return integer
      * @throws CiviCRM_API3_Exception
      */
     public function findCustomFieldId($customFieldName)
     {
-        $customFieldId = civicrm_api3('CustomField', 'getvalue', [
+        return civicrm_api3('CustomField', 'getvalue', [
             'return' => 'id',
             'name' => $customFieldName,
         ]);
-        return $customFieldId;
     }
 
-    public function addSector($contactId,$sectorId){
-
+    /**
+     * @param integer $contactId
+     * @param integer $sectorId
+     * @throws CiviCRM_API3_Exception
+     */
+    public function addSector($contactId, $sectorId){
         civicrm_api3('ContactSegment','create',[
             'contact_id' => $contactId,
             'segment_id' => $sectorId,
@@ -498,11 +500,10 @@ class CRM_CMS_SubmissionProcessor
             'is_active' => 1,
             'start_date' => date('Ymd'),
         ]);
-
     }
 
     /**
-     * @param $locationName
+     * @param string $locationName
      * @return array
      * @throws CiviCRM_API3_Exception
      */
