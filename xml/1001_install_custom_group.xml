@@ -1,0 +1,41 @@
+<!--
+  ~ @author Klaas Eikelboom  <klaas@kainuk.it>
+  ~ @date 20-Dec-2019
+  ~ @license  AGPL-3.0
+  -->
+<CustomData>
+    <CustomGroups>
+        <CustomGroup>
+            <name>motivation_expert</name>
+            <title>Motivation Expert</title>
+            <extends>Case</extends>
+            <extends_entity_column_value_option_group>case_type</extends_entity_column_value_option_group>
+            <extends_entity_column_value>Expertapplication</extends_entity_column_value>
+            <style>Inline</style>
+            <collapse_display>1</collapse_display>
+            <table_name>civicrm_value_motivation_expert</table_name>
+            <is_multiple>0</is_multiple>
+            <is_active>1</is_active>
+            <collapse_adv_display>1</collapse_adv_display>
+            <is_reserved>0</is_reserved>
+        </CustomGroup>
+    </CustomGroups>
+    <CustomFields>
+        <CustomField>
+            <name>motivation_expert_application</name>
+            <label>Motivatian Expert</label>
+            <data_type>Memo</data_type>
+            <html_type>TextArea</html_type>
+            <is_required>0</is_required>
+            <is_searchable>0</is_searchable>
+            <is_search_range>0</is_search_range>
+            <weight>1</weight>
+            <is_active>1</is_active>
+            <is_view>0</is_view>
+            <note_columns>60</note_columns>
+            <note_rows>4</note_rows>
+            <column_name>motivation</column_name>
+            <custom_group_name>motivation_expert</custom_group_name>
+        </CustomField>
+    </CustomFields>
+</CustomData>
