@@ -127,17 +127,32 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
   } // */
 
 
-  /**
-   * Example: Run an external SQL script.
-   *
-   * @return TRUE on success
-   * @throws Exception
-  public function upgrade_4201() {
-    $this->ctx->log->info('Applying update 4201');
-    // this path is relative to the extension base dir
-    $this->executeSqlFile('sql/upgrade_4201.sql');
-    return TRUE;
-  } // */
+    /**
+     * @return TRUE on success
+     * @throws Exception
+     */
+    public function upgrade_1001()
+    {
+        $this->executeCustomDataFile('xml/1001_install_custom_group.xml');
+        return TRUE;
+    }
+
+    public function upgrade_1002()
+    {
+
+        try {
+
+            civicrm_api3('Group', 'create', [
+                'name' => 'Active_Countries',
+                'title' => 'Active Countries',
+                'description' => 'Used to mark the countries where PUM is active',
+                'is_active' => 1,
+            ]);
+        } catch (CiviCRM_API3_Exception $ex) {
+            // in case it already exists - just ignore
+        }
+        return TRUE;
+    }
 
 
   /**

@@ -77,7 +77,7 @@ class CRM_CMS_Rest {
       return $this->get("/api/v1/{$entity}?page_index=0&page_size=1000000");
   }
 
-  public function getBlob($path, $file){
+  public function getBlob($path, $file, $image = false){
       $ch = curl_init($this->url . $path);
       curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -88,9 +88,14 @@ class CRM_CMS_Rest {
           )
       );
       $result = curl_exec($ch);
-      $image = json_decode($result,true)['Content'];
-      $start = strpos($image,',');
-      file_put_contents($file, base64_decode(substr($image,$start+1)));
+      if($image) {
+          $blob = json_decode($result, true)['Content'];
+          $start = strpos($blob, ',');
+          file_put_contents($file, base64_decode(substr($blob,$start+1)));
+      } else {
+          file_put_contents($file,$result);
+      }
+
       $this->checkResponse($path, $ch);
       return $file;
   }

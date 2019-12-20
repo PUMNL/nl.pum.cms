@@ -11,26 +11,15 @@
 class CRM_CMS_Page_Debug extends CRM_Core_Page {
 
   public function run() {
+
+
     // Example: Set the page-title dynamically; alternatively, declare a static title in xml/Menu/*.xml
     CRM_Utils_System::setTitle(ts('Debug'));
-
-    // Example: Assign a variable for use in a template
-    $this->assign('currentTime', date('Y-m-d H:i:s'));
-    $rest = new CRM_CMS_Rest();
-
-
- //     $result = $rest->getAll('NewsletterSubscription');
- //     $this->assign('Items',$result['Items']);
-
-    $submissionProcessor = new CRM_CMS_SubmissionProcessor();
-      $entity = 'ClientRegistration';
-      $result = $rest->getAll($entity);
-      foreach ($result['Items'] as $item) {
-          $submissionProcessor->processClientRegistration($item['Item']);
-      }
-
+    $processor = new CRM_CMS_SubmissionProcessor();
+    $processor->process();
     parent::run();
 
   }
+
 
 }

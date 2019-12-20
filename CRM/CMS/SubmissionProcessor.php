@@ -25,6 +25,7 @@ class CRM_CMS_SubmissionProcessor
     var $case_type_id;
     var $case_status_id;
     var $medium_id;
+    var $motivation_custom_id;
 
     /**
      * CRM_CMS_SubmissionProcessor constructor.
@@ -56,6 +57,7 @@ class CRM_CMS_SubmissionProcessor
         $this->skype_custom_id = $this->findCustomFieldId('Skype_Name');
         $this->initials_custom_id = $this->findCustomFieldId('Initials');
         $this->first_contact_custom_id = $this->findCustomFieldId('First_contact_with_PUM_via');
+        $this->motivation_custom_id = $this->findCustomFieldId('motivation_expert_application');
 
         $this->relationship_type_id = civicrm_api3('RelationshipType', 'getvalue', [
             'return' => 'id',
@@ -219,15 +221,14 @@ class CRM_CMS_SubmissionProcessor
             $apiParams['phone'] = $application['phone'];
         }
 
-        $uuid = uniqid();
-        $rest->getBlob("/api/v1/ExpertApplication/{$application['Id']}/photo", $customUploadDir . "photo_{$uuid}.jpg");
-        $apiParams['image_URL'] = CRM_Utils_System::url('civicrm/contact/imagefile', ['photo' => "photo_{$uuid}.jpg"], true);
+
 
         $result = civicrm_api3('Contact', 'create', $apiParams);
 
+        $contactId = $result['id'];
         if (isset($application['home_address'])) {
             $apiParams = [
-                'contact_id' => $result['id'],
+                'contact_id' => $contactId,
                 'location_type_id' => $this->work_loc_type_id,
                 'is_primary' => 1,
                 'street_address' => $application['home_address']['street_address'],
@@ -239,26 +240,61 @@ class CRM_CMS_SubmissionProcessor
         }
 
         if(isset($application['sector_id'])){
-            $this->addSector($result['id'],$application['sector_id']);
+            $this->addSector($contactId,$application['sector_id']);
         }
 
-        $this->createExpertCase($result['id']);
+        $caseId = $this->createExpertCase($contactId,$application['motivation']);
+
+        $uuid = uniqid('',true);
+        $photoName = "photo_{$uuid}.jpg";
+
+        $rest->getBlob("/api/v1/ExpertApplication/{$application['Id']}/photo", file_directory_temp()."/{$photoName}",true);
+        $this->uploadDocument($contactId,$caseId,file_directory_temp()."/{$photoName}",'Photo');
+        if(isset($application['cv'])){
+            $ext = pathinfo($application['cv'], PATHINFO_EXTENSION);
+            $name = pathinfo($application['cv'], PATHINFO_BASENAME);
+            $name = substr($name,0,strlen($name)-strlen($ext)-1);
+            $cvFilename=file_directory_temp()."/cv_{$name}_{$uuid}.$ext";
+            $rest->getBlob("/api/v1/ExpertApplication/{$application['Id']}/cvDownload","$cvFilename",false);
+            $this->uploadDocument($contactId,$caseId,$cvFilename,'Curriculum Vitae');
+        }
+        civicrm_api3('Contact','create',[
+          'id' => $contactId,
+          'image_URL' => CRM_Utils_System::url('civicrm/contact/imagefile', ['photo' => $photoName], true)
+        ]);
     }
 
     /**
      * @param $contactId
+     * @return int the id of the case
      * @throws CiviCRM_API3_Exception
      */
-    function createExpertCase($contactId)
+    function createExpertCase($contactId,$motivation)
     {
+        $displayName = civicrm_api3('Contact','getvalue',[
+            'id' => $contactId,
+            'return' => 'display_name',
+        ]);
+
         $result = civicrm_api3('Case', 'create', [
             'contact_id' => $contactId,
+            'subject' => "{$displayName}-Expertapplication",
             'case_type_id' => $this->case_type_id,
             'status_id' => $this->case_status_id,
-            'subject' => "Case voor Klaas",
             'creator_id' => $contactId,
             'medium_id' => $this->medium_id,
         ]);
+        $caseId = $result['id'];
+
+        civicrm_api3('Case','create',[
+            'id'=>$caseId,
+            'subject' => "{$displayName}-Expertapplication-{$caseId}",
+        ]);
+        CRM_Core_DAO::executeQuery('insert into civicrm_value_motivation_expert(entity_id,motivation) values (%1,%2)',[
+            1 => [$caseId,'Integer'],
+            2 => [$motivation,'String']
+        ]);
+        return $caseId;
     }
 
     /**
@@ -413,7 +449,6 @@ class CRM_CMS_SubmissionProcessor
             'relationship_type_id' => $this->relationship_type_id,
         ]);
 
-
     }
 
     /**
@@ -480,5 +515,17 @@ class CRM_CMS_SubmissionProcessor
         return $civicrm_api3;
     }
 
+    public function uploadDocument($contactId, $caseId, $file,$subject)
+    {
+        $documentsRepo = CRM_Documents_Entity_DocumentRepository::singleton();
+        $document = new CRM_Documents_Entity_Document();
+        $document->addCaseId($caseId);
+        $document->addContactId($contactId);
+        $document->setSubject($subject);
+        $version = $document->addNewVersion();
+        $version->setDescription("$subject v1");
+        $documentsRepo->persist($document);
+        CRM_Documents_Utils_File::copyFileToDocument($file, mime_content_type($file), $document);
+    }
 
 }
