@@ -120,17 +120,13 @@ SQL;
                 'name' => $dao->label,
             ];
             if(key_exists($dao->sector_id,$remoteSectors)){
-                echo "update {$dao->label}  \n";
-              //  $rest->update('Sector',$remoteSectors[$dao->sector_id],$result);
+                $rest->update('Sector',$remoteSectors[$dao->sector_id],$result);
                 unset($remoteSectors[$dao->sector_id]);
             } else {
-                echo "create {$dao->label}  \n";
-              //  $rest->create('Sector',$result);
+                $rest->create('Sector',$result);
             };
         }
-
         foreach ($remoteSectors as $remoteSectorId) {
-            echo "Delete $remoteSectorId \n";
             $rest->delete('Sector', $remoteSectorId);
         }
     }
