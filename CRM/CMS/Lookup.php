@@ -7,11 +7,17 @@
 class CRM_CMS_Lookup {
 
   var $countryGroupId;
+  var $repGroupId;
 
     public function __construct()
     {
         $this->countryGroupId = civicrm_api3('Group', 'getvalue', [
                 'title' => 'Active countries',
+                'return' => 'id'
+            ]
+        );
+        $this->repGroupId = civicrm_api3('Group', 'getvalue', [
+                'title' => 'Representatives',
                 'return' => 'id'
             ]
         );
@@ -46,6 +52,7 @@ SQL;
     $dao = CRM_Core_DAO::executeQuery($sql,[
        1 => [$config->getRepresepentativeRelationshipTypeId(),'Integer'],
        2 => [$this->countryGroupId,'Integer'],
+       3 => [$this->repGroupId,'Integer'],
       ]
       );
     while($dao->fetch()){
