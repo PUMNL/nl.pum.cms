@@ -16,10 +16,10 @@ function civicrm_api3_Drupalcms_remove($params)
         $rest = new CRM_CMS_Rest();
         $count = 0;
 
-        $dao = CRM_Core_DAO::executeQuery('select id, entity, submission_id from pum_cms_submission');
+        $dao = CRM_Core_DAO::executeQuery("select id, entity, submission_id from pum_cms_submission where state='P'");
         while ($dao->fetch()) {
             $rest->delete($dao->entity, $dao->submission_id);
-            CRM_Core_DAO::executeQuery('delete from pum_cms_submission where id=%1', [
+            CRM_Core_DAO::executeQuery("update pum_cms_submission set state = 'D' where id=%1", [
                 1 => [$dao->id, 'Integer'],
             ]);
             $count++;

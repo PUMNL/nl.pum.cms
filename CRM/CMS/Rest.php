@@ -135,7 +135,7 @@ class CRM_CMS_Rest {
     {
         $httpResponse = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($httpResponse != 200 && $httpResponse != 401) {
-            throw new Exception('REST Call ' . $this->url . $path . 'does not return a 200 https response ');
+            throw new Exception('REST Call ' . $this->url . $path . 'does not return a 200 https response but '.$httpResponse);
         }
     }
 }

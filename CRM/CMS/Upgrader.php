@@ -141,7 +141,6 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
     {
 
         try {
-
             civicrm_api3('Group', 'create', [
                 'name' => 'Active_Countries',
                 'title' => 'Active Countries',
@@ -151,6 +150,12 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
         } catch (CiviCRM_API3_Exception $ex) {
             // in case it already exists - just ignore
         }
+        return TRUE;
+    }
+
+    public function upgrade_1003()
+    {
+        $this->executeSqlFile('sql/1003_update_submission.sql');
         return TRUE;
     }
 

@@ -90,12 +90,28 @@ class CRM_CMS_SubmissionProcessor
      * @param $entity
      * @return string
      */
-    function checkIfProcessed($submissionId, $entity)
+    function checkIfProcessed($submission, $entity)
     {
-        return CRM_Core_DAO::singleValueQuery('select id from pum_cms_submission where submission_id=%1 and entity = %2', [
+        $sql = <<< SQL
+        select id from pum_cms_submission 
+        where submission_id=%1 and entity = %2 and state in ('P','D','F')
+SQL;
+        $submissionId = $submission['Id'];
+        $submitted = CRM_Core_DAO::singleValueQuery($sql, [
             1 => [$submissionId, 'Integer'],
             2 => [$entity, 'String']
         ]);
+        if($submitted){
+            return $submissionId;
+        } else {
+            CRM_Core_DAO::executeQuery('insert into pum_cms_submission(entity,submission_id,state,submission) values (%1,%2,%3,%4)', [
+                2 => [$submissionId, 'Integer'],
+                1 => [$entity, 'String'],
+                3 => ['P','String'],
+                4 => [json_encode($submission,JSON_PRETTY_PRINT),'String'],
+            ]);
+            return FALSE;
+        }
     }
 
     /**
@@ -104,9 +120,34 @@ class CRM_CMS_SubmissionProcessor
      */
     function setProcessed($submissionId, $entity)
     {
-        CRM_Core_DAO::executeQuery('insert into pum_cms_submission(entity,submission_id) values (%1,%2)', [
+        $sql = <<< SQL
+        update pum_cms_submission set state='P' 
+        where  entity =%1
+        and    submission_id = %2
+SQL;
+        CRM_Core_DAO::executeQuery($sql, [
             2 => [$submissionId, 'Integer'],
             1 => [$entity, 'String']
+        ]);
+    }
+
+    /**
+     * @param integer $submissionId
+     * @param string $entity
+     */
+    function setFailed($submissionId, $entity,$failure)
+    {
+        $sql = <<< SQL
+        update pum_cms_submission 
+        set    state='F' 
+        ,      failure=%3
+        where  entity =%2
+        and    submission_id = %1
+SQL;
+        CRM_Core_DAO::executeQuery($sql, [
+            1 => [$submissionId, 'Integer'],
+            2 => [$entity, 'String'],
+            3 => [$failure, 'String']
         ]);
     }
 
@@ -116,37 +157,49 @@ class CRM_CMS_SubmissionProcessor
     function process()
     {
         $rest = new CRM_CMS_Rest();
-
         $entity = 'NewsLetterSubscription';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
-            if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+
+            if ($this->checkIfProcessed($item['Item'], $entity)) {
                 // do nothing already processed
             } else {
-                $this->processNewsLetterSubscription($item['Item']);
-                $this->setProcessed($item['Item']['Id'], $entity);
+                try {
+                    $this->processNewsLetterSubscription($item['Item']);
+                    $this->setProcessed($item['Item']['Id'], $entity);
+                } catch (CiviCRM_API3_Exception $e) {
+                    $this->setFailed($item['Item']['Id'], $entity, $e);
+                }
             };
         }
 
         $entity = 'ClientRegistration';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
-            if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+            if ($this->checkIfProcessed($item['Item'], $entity)) {
                 // do nothing already processed
             } else {
-                $this->processClientRegistration($item['Item']);
-                $this->setProcessed($item['Item']['Id'], $entity);
+                try {
+                    $this->processClientRegistration($item['Item']);
+                    $this->setProcessed($item['Item']['Id'], $entity);
+                } catch (CiviCRM_API3_Exception $e) {
+                    $this->setFailed($item['Item']['Id'], $entity, $e);
+                }
             };
         }
 
         $entity = 'ExpertApplication';
         $result = $rest->getAll($entity);
         foreach ($result['Items'] as $item) {
-            if ($this->checkIfProcessed($item['Item']['Id'], $entity)) {
+            if ($this->checkIfProcessed($item['Item'], $entity)) {
                 // do nothing already processed
             } else {
-                $this->processExpertApplication($item['Item']);
-                $this->setProcessed($item['Item']['Id'], $entity);
+                try {
+                    $this->processExpertApplication($item['Item']);
+                    $this->setProcessed($item['Item']['Id'], $entity);
+                } catch (CiviCRM_API3_Exception $e) {
+                    $this->setFailed($item['Item']['Id'], $entity, $e);
+                }
             };
         }
     }
@@ -448,6 +501,13 @@ class CRM_CMS_SubmissionProcessor
             'contact_id_b' => $registration['representative_id'],
             'relationship_type_id' =>  $config->getRepresepentativeRelationshipTypeId(),
         ]);
+
+        if($registration['newsletter_subscription']==='Y' or $registration['newsletter_subscription']==='true' ){
+            civicrm_api3('GroupContact', 'create', [
+                'contact_id' => $contactId,
+                'group_id' => $this->newsLetterGroupId
+            ]);
+        }
     }
 
     /**
@@ -527,6 +587,22 @@ class CRM_CMS_SubmissionProcessor
         $version->setDescription("$subject v1");
         $documentsRepo->persist($document);
         CRM_Documents_Utils_File::copyFileToDocument($file, mime_content_type($file), $document);
+    }
+
+    public function reportFailures(){
+        $failures = [];
+        $dao = CRM_Core_DAO::executeQuery('select entity,submission, failure from pum_cms_submission where state = %1',[
+              1 => ['F','String']
+            ]
+        );
+        while($dao->fetch()){
+            $failures [] = [
+                'entity' => $dao->entity,
+                'submission' => $dao->submission,
+                'failure' => $dao->failure,
+            ];
+        }
+        return $failures;
     }
 
 }

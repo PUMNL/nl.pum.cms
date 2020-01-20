@@ -29,7 +29,6 @@ Als the functionality needed for the connections is part of this extension `nl.p
 
 Most of the work that is done by this extensions is done my jobs. When they fail, they sent a error message to the designated administrator. Create a template for this email in Message Templates ` Mailings -> Message Templates`. The template must contain the token `{cms.api_error}` where the error will be substituted. Add some explanation for the reader.
 
-
 After the installation a new menu is created at `Administer -> System Settings -> CMS Drupal Api`, that can be used to reach the settings screen.
 
 In this screen the following settings must be configured.
@@ -44,6 +43,16 @@ The following jobs are added to the CiviCRM Jobs:
 * DrupalCms: PostLookups (Hourly): Post lookup tables to the DrupalCMS with rest call.
 * DrupalCms: Remove (Daily) Removes the subscriptions from the CMS.
 When testing these jobs can be executed manually. In productions they must be enabled.
+
+## Logging
+The processing uses a intermediate tale `pum_cms_submission`. It has the following columns:
+
+* `id` technical key.
+* `entity` submission entity that is read. At the moment NewsLetterSubscription, ClientRegistration and ExpertApplication.
+* `state` : N=Not Processed, P=Processed, F=Failure, D=Deleted (from the CMS site)
+* `submission` : the submission from the CMS site in JSON format.
+* `failure` : if a submission could not be processed because of an failure it can be found here.
+ 
 
 
 
