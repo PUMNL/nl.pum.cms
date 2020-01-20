@@ -28,18 +28,22 @@ class CRM_CMS_Lookup {
     $config = CRM_Newcustomer_Config::singleton();
     $sql = <<<SQL
       SELECT distinctrow rep.id contact_id
-     , rep.display_name         display_name
+     , rep.display_name         display_name                  
      , rep.sort_name            sort_name
      , em.email                 email
      , ph.phone                 phone
      , adr.city                 city
+     , ifnull(adr.country_id,0)           country_id_residence
+     , vc.civicrm_country_id    country_id_responsible 
      FROM civicrm_contact rep
      JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND is_active=1
      JOIN civicrm_contact cntr ON (cr.contact_id_a = cntr.id) AND cntr.contact_type = 'Organization' AND cntr.contact_sub_type LIKE '%Country%'
-     JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2)    
+     JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2 and cgc.status='Added')  
+     JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')        
      LEFT JOIN civicrm_email em ON (rep.id = em.contact_id AND em.is_primary = 1)
      LEFT JOIN civicrm_phone ph ON (rep.id = ph.contact_id AND ph.is_primary = 1)
      LEFT JOIN civicrm_address adr ON (rep.id = adr.contact_id AND adr.is_primary = 1)
+     LEFT JOIN civicrm_value_country vc ON (vc.entity_id=cntr.id)
      ORDER BY rep.sort_name
 SQL;
       set_time_limit(0);
@@ -58,11 +62,13 @@ SQL;
     while($dao->fetch()){
       $result = [
         'contact_id' => $dao->contact_id,
-        'display_name'   => $dao->display_name,
-        'sort_name'       => $dao->sort_name,
-        'email'           => $dao->email,
-        'phone'           => $dao->phone,
-        'city'            => $dao->city,
+        'display_name'           => $dao->display_name,
+        'sort_name'              => $dao->sort_name,
+        'email'                  => $dao->email,
+        'phone'                  => $dao->phone,
+        'city'                   => $dao->city,
+        'country_id_residence'   => $dao->country_id_residence,
+        'country_id_responsible' => $dao->country_id_responsible,
       ];
         if(key_exists($dao->contact_id,$remoteReps)){
             $rest->update('Representative',$remoteReps[$dao->contact_id],$result);
