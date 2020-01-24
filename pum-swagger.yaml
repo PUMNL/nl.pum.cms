@@ -418,6 +418,10 @@ definitions:
       last_name:
         type: string
         maxLength: 64
+      initials:
+         type: string
+         maxLength: 25
+         description: Special Custom Field in Civi.
       contact_phone:
          type: string
          maxLength: 32
