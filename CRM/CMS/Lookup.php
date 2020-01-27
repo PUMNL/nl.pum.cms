@@ -8,6 +8,7 @@ class CRM_CMS_Lookup {
 
   var $countryGroupId;
   var $repGroupId;
+  var $relationTypeId;
 
     public function __construct()
     {
@@ -21,11 +22,13 @@ class CRM_CMS_Lookup {
                 'return' => 'id'
             ]
         );
+        $config = CRM_Newcustomer_Config::singleton();
+        $this->relationTypeId = $config->getRepresepentativeRelationshipTypeId();
     }
 
   public function representatives()
   {
-    $config = CRM_Newcustomer_Config::singleton();
+
     $sql = <<<SQL
       SELECT distinctrow rep.id contact_id
      , rep.display_name         display_name                  
@@ -53,11 +56,11 @@ SQL;
       foreach ($remote['Items'] as $key => $item) {
           $remoteReps[$item['Item']['contact_id']] = $item['Item']['Id'];
       }
-    $dao = CRM_Core_DAO::executeQuery($sql,[
-       1 => [$config->getRepresepentativeRelationshipTypeId(),'Integer'],
-       2 => [$this->countryGroupId,'Integer'],
-       3 => [$this->repGroupId,'Integer'],
-      ]
+      $dao = CRM_Core_DAO::executeQuery($sql, [
+              1 => [$this->relationTypeId, 'Integer'],
+              2 => [$this->countryGroupId, 'Integer'],
+              3 => [$this->repGroupId, 'Integer'],
+          ]
       );
     while($dao->fetch()){
       $result = [
@@ -81,22 +84,35 @@ SQL;
     foreach ($remoteReps as $remoteRepsId) {
         $rest->delete('Representative', $remoteRepsId);
     }
-
   }
 
   public function countries()
   {
-
-    set_time_limit(0);
-    $rest = new CRM_CMS_Rest();
-    $remote = $rest->getAll('Country');
-    $remoteCountries=[];
-    foreach($remote['Items'] as $key => $item){
-        $remoteCountries[$item['Item']['country_id']] = $item['Item']['Id'];
-    }
-
-    $dao = CRM_Core_DAO::executeQuery('select id as country_id, iso_code, name from civicrm_country');
-
+    $sql = <<<SQL
+    SELECT distinctrow  cntr.id country_id
+    ,                   cntr.iso_code iso_code
+    ,                   cntr.name     name
+    FROM civicrm_contact rep
+    JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND is_active=1
+    JOIN civicrm_contact cc ON (cr.contact_id_a = cc.id) AND cc.contact_type = 'Organization' AND cc.contact_sub_type LIKE '%Country%'
+    JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cc.id and cgc.group_id= %2 and cgc.status='Added')
+    JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')
+    JOIN civicrm_value_country vc ON (vc.entity_id=cc.id)
+    JOIN civicrm_country cntr ON (cntr.id=vc.civicrm_country_id)
+SQL;
+      set_time_limit(0);
+      $rest = new CRM_CMS_Rest();
+      $remote = $rest->getAll('Country');
+      $remoteCountries = [];
+      foreach ($remote['Items'] as $key => $item) {
+          $remoteCountries[$item['Item']['country_id']] = $item['Item']['Id'];
+      }
+      $dao = CRM_Core_DAO::executeQuery($sql, [
+              1 => [$this->relationTypeId, 'Integer'],
+              2 => [$this->countryGroupId, 'Integer'],
+              3 => [$this->repGroupId, 'Integer'],
+          ]
+      );
     while($dao->fetch()){
       $result = [
          'country_id' => $dao->country_id,
