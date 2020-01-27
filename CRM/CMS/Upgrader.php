@@ -18,6 +18,9 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
    */
   public function install() {
     $this->executeSqlFile('sql/create_submission.sql');
+    CRM_CMS_Upgrader::upgrade_1001();
+    CRM_CMS_Upgrader::upgrade_1002();
+    CRM_CMS_Upgrader::upgrade_1003();
   }
 
   /**
