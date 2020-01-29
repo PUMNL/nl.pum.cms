@@ -89,16 +89,14 @@ SQL;
   public function countries()
   {
     $sql = <<<SQL
-    SELECT distinctrow  cntr.id country_id
-    ,                   cntr.iso_code iso_code
-    ,                   cntr.name     name
-    FROM civicrm_contact rep
-    JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND is_active=1
-    JOIN civicrm_contact cc ON (cr.contact_id_a = cc.id) AND cc.contact_type = 'Organization' AND cc.contact_sub_type LIKE '%Country%'
-    JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cc.id and cgc.group_id= %2 and cgc.status='Added')
-    JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')
+    SELECT distinctrow  cntr.id
+    ,                   cntr.iso_code
+    ,                   cntr.name
+    FROM civicrm_contact cc
+    JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cc.id and cgc.group_id=%1 and cgc.status='Added')
     JOIN civicrm_value_country vc ON (vc.entity_id=cc.id)
     JOIN civicrm_country cntr ON (cntr.id=vc.civicrm_country_id)
+    WHERE cc.contact_type = 'Organization' AND cc.contact_sub_type LIKE '%Country%'
 SQL;
       set_time_limit(0);
       $rest = new CRM_CMS_Rest();
@@ -108,9 +106,7 @@ SQL;
           $remoteCountries[$item['Item']['country_id']] = $item['Item']['Id'];
       }
       $dao = CRM_Core_DAO::executeQuery($sql, [
-              1 => [$this->relationTypeId, 'Integer'],
-              2 => [$this->countryGroupId, 'Integer'],
-              3 => [$this->repGroupId, 'Integer'],
+              1 => [$this->countryGroupId, 'Integer'],
           ]
       );
     while($dao->fetch()){
