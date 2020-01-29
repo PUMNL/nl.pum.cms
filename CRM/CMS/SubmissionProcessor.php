@@ -356,7 +356,6 @@ SQL;
      */
     function processClientRegistration($registration)
     {
-
         if(isset($registration['visit_address'])){
             $registration['visit_address'] = json_decode($registration['visit_address'],true);
         };
@@ -463,6 +462,11 @@ SQL;
             'job_title' => $registration['job_title'],
             'source' => 'New Customer - form drupal CMS'
         ];
+
+        // add initials if they are part of the registration
+        if (isset($registration['initials'])) {
+            $apiParams['custom_' . $this->initials_custom_id] = $registration['initials'];
+        }
 
         if (isset($registration['skype_name'])) {
             $apiParams['custom_' . $this->skype_custom_id] = $registration['skype_name'];
