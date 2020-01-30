@@ -415,7 +415,7 @@ SQL;
             civicrm_api3('Phone', 'create', $apiParams);
         }
 
-        if (isset($registration['phone_2'])) {
+        if (isset($registration['phone_2']) && !empty($registration['phone_2'])) {
             $apiParams = [
                 'contact_id' => $organizationId,
                 'location_type_id' => $this->work_loc_type_id,
@@ -500,9 +500,16 @@ SQL;
         ]);
 
         $config = CRM_Newcustomer_Config::singleton();
+
+        $representativeId = civicrm_api3('Relationship','getvalue', [
+              'return' => 'contact_id_b',
+              'id' =>   $registration['representative_id'],
+            ]
+        );
+
         $result = civicrm_api3('Relationship', 'create', [
             'contact_id_a' => $organizationId,
-            'contact_id_b' => $registration['representative_id'],
+            'contact_id_b' => $representativeId,
             'relationship_type_id' =>  $config->getRepresepentativeRelationshipTypeId(),
         ]);
 

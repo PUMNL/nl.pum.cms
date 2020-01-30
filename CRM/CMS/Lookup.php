@@ -30,7 +30,7 @@ class CRM_CMS_Lookup {
   {
 
     $sql = <<<SQL
-      SELECT distinctrow rep.id contact_id
+      SELECT distinctrow cr.id contact_id
      , rep.display_name         display_name                  
      , rep.sort_name            sort_name
      , em.email                 email
