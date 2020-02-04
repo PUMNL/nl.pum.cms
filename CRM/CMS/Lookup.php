@@ -89,7 +89,7 @@ SQL;
   public function countries()
   {
     $sql = <<<SQL
-    SELECT distinctrow  cntr.id
+    SELECT distinctrow  cntr.id country_id
     ,                   cntr.iso_code
     ,                   cntr.name
     FROM civicrm_contact cc
