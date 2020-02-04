@@ -93,7 +93,7 @@ class CRM_CMS_SubmissionProcessor
     function checkIfProcessed($submission, $entity)
     {
         $sql = <<< SQL
-        select id from pum_cms_submission 
+        select id from pum_cms_submission
         where submission_id=%1 and entity = %2 and state in ('P','D','F')
 SQL;
         $submissionId = $submission['Id'];
@@ -121,7 +121,7 @@ SQL;
     function setProcessed($submissionId, $entity)
     {
         $sql = <<< SQL
-        update pum_cms_submission set state='P' 
+        update pum_cms_submission set state='P'
         where  entity =%1
         and    submission_id = %2
 SQL;
@@ -138,8 +138,8 @@ SQL;
     function setFailed($submissionId, $entity,$failure)
     {
         $sql = <<< SQL
-        update pum_cms_submission 
-        set    state='F' 
+        update pum_cms_submission
+        set    state='F'
         ,      failure=%3
         where  entity =%2
         and    submission_id = %1
@@ -224,6 +224,39 @@ SQL;
             'contact_id' => $contactId,
             'group_id' => $this->newsLetterGroupId
         ]);
+
+        /* Send E-mail confirmation */
+        try {
+          $params = array(
+            'version' => 3,
+            'sequential' => 1,
+            'msg_title' => 'Thank you signup newsletter',
+          );
+          $msg_bevestigingaanmeldingcv = civicrm_api('MessageTemplate', 'get', $params);
+          if(is_array($msg_bevestigingaanmeldingcv)){
+            foreach($msg_bevestigingaanmeldingcv['values'] as $key => $value) {
+              $template_id = $value['id'];
+            }
+          }
+
+          if(!empty($template_id)) {
+            $domain_mail = civicrm_api('Domain', 'get', array('version' => 3,'sequential' => 1));
+            if (!empty($domain_mail['values'][0]['from_email']) && !empty($domain_mail['values'][0]['from_name'])){
+              $params_sendmail = array(
+                'version' => 3,
+                'sequential' => 1,
+                'contact_id' => $contactId,
+                'template_id' => $template_id,
+                'from_email' => $domain_mail['values'][0]['from_email'],
+                'from_name' => $domain_mail['values'][0]['from_name'],
+                'case_id' => $caseId,
+              );
+              $mail_send = civicrm_api('Email', 'send', $params_sendmail);
+            }
+          }
+        } catch (CiviCRM_API3_Exception $e) {
+
+        }
     }
 
     /**
@@ -312,6 +345,40 @@ SQL;
           'id' => $contactId,
           'image_URL' => CRM_Utils_System::url('civicrm/contact/imagefile', ['photo' => $photoName], true)
         ]);
+
+
+        /* Send E-mail confirmation to expert */
+        try {
+          $params = array(
+            'version' => 3,
+            'sequential' => 1,
+            'msg_title' => 'Bevestiging aanmelding CV',
+          );
+          $msg_bevestigingaanmeldingcv = civicrm_api('MessageTemplate', 'get', $params);
+          if(is_array($msg_bevestigingaanmeldingcv)){
+            foreach($msg_bevestigingaanmeldingcv['values'] as $key => $value) {
+              $template_id = $value['id'];
+            }
+          }
+
+          if(!empty($template_id)) {
+            $domain_mail = civicrm_api('Domain', 'get', array('version' => 3,'sequential' => 1));
+            if (!empty($domain_mail['values'][0]['from_email']) && !empty($domain_mail['values'][0]['from_name'])){
+              $params_sendmail = array(
+                'version' => 3,
+                'sequential' => 1,
+                'contact_id' => $contactId,
+                'template_id' => $template_id,
+                'from_email' => $domain_mail['values'][0]['from_email'],
+                'from_name' => $domain_mail['values'][0]['from_name'],
+                'case_id' => $caseId,
+              );
+              $mail_send = civicrm_api('Email', 'send', $params_sendmail);
+            }
+          }
+        } catch (CiviCRM_API3_Exception $e) {
+
+        }
     }
 
     /**
