@@ -30,7 +30,7 @@ class CRM_CMS_Lookup {
   {
 
     $sql = <<<SQL
-      SELECT distinctrow cr.id contact_id
+      SELECT distinctrow max(cr.id) contact_id
      , rep.display_name         display_name                  
      , rep.sort_name            sort_name
      , em.email                 email
@@ -47,7 +47,9 @@ class CRM_CMS_Lookup {
      LEFT JOIN civicrm_phone ph ON (rep.id = ph.contact_id AND ph.is_primary = 1)
      LEFT JOIN civicrm_address adr ON (rep.id = adr.contact_id AND adr.is_primary = 1)
      LEFT JOIN civicrm_value_country vc ON (vc.entity_id=cntr.id)
-     ORDER BY rep.sort_name
+     group by rep.id,rep.sort_name,vc.civicrm_country_id
+     order by rep.sort_name
+
 SQL;
       set_time_limit(0);
       $rest = new CRM_CMS_Rest();
