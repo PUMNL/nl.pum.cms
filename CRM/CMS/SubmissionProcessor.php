@@ -13,14 +13,17 @@ class CRM_CMS_SubmissionProcessor
     var $postal_loc_type_id;
     var $work_loc_type_id;
     var $main_loc_type_id;
+    var $home_loc_type_id;
     var $website_type_id;
     var $facebook_type_id;
     var $mobile_type_id;
+    var $phone_type_id;
     var $genderTable = [];
     var $prefixTable = [];
     var $skype_custom_id;
     var $initials_custom_id;
     var $first_contact_custom_id;
+    var $other_contact_custom_id;
     var $relationship_type_id;
     var $case_type_id;
     var $case_status_id;
@@ -42,9 +45,11 @@ class CRM_CMS_SubmissionProcessor
         $this->postal_loc_type_id = $this->findLocationTypeId('Postaladdress');
         $this->work_loc_type_id = $this->findLocationTypeId('Work');
         $this->main_loc_type_id = $this->findLocationTypeId('Main');
+        $this->home_loc_type_id = $this->findLocationTypeId('Home');
         $this->website_type_id = $this->findOptionValue('website_type', 'Work');
         $this->facebook_type_id = $this->findOptionValue('website_type', 'Facebook');
         $this->mobile_type_id = $this->findOptionValue('phone_type', 'Mobile');
+        $this->phone_type_id = $this->findOptionValue('phone_type', 'Phone');
 
         $this->genderTable = [
             'male' => 2, 'female' => 1
@@ -62,6 +67,7 @@ class CRM_CMS_SubmissionProcessor
         $this->skype_custom_id = $this->findCustomFieldId('Skype_Name');
         $this->initials_custom_id = $this->findCustomFieldId('Initials');
         $this->first_contact_custom_id = $this->findCustomFieldId('First_contact_with_PUM_via');
+        $this->other_contact_custom_id = $this->findCustomFieldId('Other_contact_with_PUM');
         $this->motivation_custom_id = $this->findCustomFieldId('motivation_expert_application');
         $this->agreement_custom_id  = $this->findCustomFieldId('Gentlemen_s_Agreement');
 
@@ -290,6 +296,10 @@ SQL;
             $apiParams['custom_' . $this->first_contact_custom_id] = $application['first_contact'];
         }
 
+        if (isset($application['first_contact_other'])) {
+           $apiParams['custom_' . $this->other_contact_custom_id] = $application['first_contact_other'];
+        }
+
         if (isset($application['birth_date'])) {
             $apiParams['birth_date'] = $this->formatDate($application['birth_date']);
         }
@@ -300,10 +310,6 @@ SQL;
 
         if (isset($application['email'])) {
             $apiParams['email'] = $application['email'];
-        }
-
-        if (isset($application['phone'])) {
-            $apiParams['phone'] = $application['phone'];
         }
 
         $result = civicrm_api3('Contact', 'create', $apiParams);
@@ -321,6 +327,27 @@ SQL;
             ];
             civicrm_api3('Address', 'create', $apiParams);
         }
+
+       if (isset($application['phone'])) {
+         $apiParams = [
+           'contact_id' => $contactId,
+           'location_type_id' => $this->home_loc_type_id,
+           'phone' => $application['phone'],
+           'is_primary' => 1,
+           'phone_type_id' => $this->phone_type_id
+         ];
+         civicrm_api3('Phone', 'create', $apiParams);
+       }
+
+      if (isset($application['mobile'])) {
+        $apiParams = [
+          'contact_id' => $contactId,
+          'location_type_id' => $this->home_loc_type_id,
+          'phone' => $application['mobile'],
+          'phone_type_id' => $this->mobile_type_id
+        ];
+        civicrm_api3('Phone', 'create', $apiParams);
+      }
 
         if(isset($application['sector_id'])){
             $this->addSector($contactId,$application['sector_id']);
