@@ -669,7 +669,7 @@ SQL;
 
     public function reportFailures(){
         $failures = [];
-        $dao = CRM_Core_DAO::executeQuery('select entity,submission, failure from pum_cms_submission where state = %1',[
+        $dao = CRM_Core_DAO::executeQuery('select id,entity,submission, failure from pum_cms_submission where state = %1 and is_mailed=0',[
               1 => ['F','String']
             ]
         );
@@ -679,6 +679,9 @@ SQL;
                 'submission' => $dao->submission,
                 'failure' => $dao->failure,
             ];
+            CRM_Core_DAO::executeQuery('update pum_cms_submission set is_mailed=1 where id=%1',[
+               1 => [$dao->id,'Integer']
+            ]);
         }
         return $failures;
     }

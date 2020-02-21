@@ -21,6 +21,7 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
     CRM_CMS_Upgrader::upgrade_1001();
     CRM_CMS_Upgrader::upgrade_1002();
     CRM_CMS_Upgrader::upgrade_1003();
+    CRM_CMS_Upgrader::upgrade_1004();
   }
 
   /**
@@ -162,6 +163,11 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
         return TRUE;
     }
 
+    public function upgrade_1004()
+    {
+      $this->executeSqlFile('sql/1004_update_submission.sql');
+      return TRUE;
+    }
 
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
