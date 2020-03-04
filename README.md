@@ -6,6 +6,12 @@ For the exchange information a webapi is defined in the specification language s
 
 ## Push lookup tables
 
+The CMS several lookup tables. This tables are posted to CMS from CiviCRM with the Job `PostLookups`. The tables are
+* Representatives (All the reps of an active country)
+* Countries (only the contries that ara marked as active acountry and have an active rep)
+* Sectors
+* OptionValues - generic OptionValue table of CiviCRM but only used for the *First contact with Pum*
+
 ## Process submissions
 
 ### Newsletter
@@ -19,7 +25,8 @@ For the exchange information a webapi is defined in the specification language s
 
 ### Become volunteer
 
-This description must yet be done
+* Create the contact that aspires to become the volunteer.
+* Create a case that starts the intake process.
 
 # Installation
 
@@ -49,8 +56,9 @@ The processing uses a intermediate tale `pum_cms_submission`. It has the followi
 
 * `id` technical key.
 * `entity` submission entity that is read. At the moment NewsLetterSubscription, ClientRegistration and ExpertApplication.
-* `state` : N=Not Processed, P=Processed, F=Failure, D=Deleted (from the CMS site)
+* `state` : N=Not Processed, P=Processed, F=Failure,D=Deleted (from the CMS site)
 * `submission` : the submission from the CMS site in JSON format.
+* `is_mailed` : is the failure already reported by email,
 * `failure` : if a submission could not be processed because of an failure it can be found here.
  
 
