@@ -61,6 +61,11 @@ The processing uses a intermediate tale `pum_cms_submission`. It has the followi
 * `is_mailed` : is the failure already reported by email,
 * `failure` : if a submission could not be processed because of an failure it can be found here.
  
+ ### Known Issues
+ Test versions of the CMS contained basic authentication. 
+ Its possible to configure this in the settings screen by setting the literal `authorization: Basic` header. 
+ You can calculate this header using the [Blitter site](https://www.blitter.se/utils/basic-authentication-header-generator/)
+ In the production situation an alternative mechanism is in place and this header is ignored.
 
 
 
