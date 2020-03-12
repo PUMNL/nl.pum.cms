@@ -39,7 +39,7 @@ class CRM_CMS_Lookup {
      , ifnull(adr.country_id,0)           country_id_residence
      , vc.civicrm_country_id    country_id_responsible 
      FROM civicrm_contact rep
-     JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND cr.is_active=1 and (cr.end_date >= CURDATE or cr.end_date is null) AND (cr.start_date <= CURDATE or cr.start_date is null)
+     JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND cr.is_active=1 and (cr.end_date >= CURDATE() or cr.end_date is null) AND (cr.start_date <= CURDATE() or cr.start_date is null)
      JOIN civicrm_contact cntr ON (cr.contact_id_a = cntr.id) AND cntr.contact_type = 'Organization' AND cntr.contact_sub_type LIKE '%Country%'
      JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2 and cgc.status='Added')  
      JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')        
