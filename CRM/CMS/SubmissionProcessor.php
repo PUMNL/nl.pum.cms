@@ -613,6 +613,38 @@ SQL;
                 'group_id' => $this->newsLetterGroupId
             ]);
         }
+
+        /* Send E-mail confirmation to client */
+        try {
+          $params = array(
+            'version' => 3,
+            'sequential' => 1,
+            'msg_title' => 'Contact details of your PUM Representative',
+          );
+          $msg_contactdetailsrep = civicrm_api('MessageTemplate', 'get', $params);
+          if(is_array($msg_contactdetailsrep)){
+            foreach($msg_contactdetailsrep['values'] as $key => $value) {
+              $template_id = $value['id'];
+            }
+          }
+
+          if(!empty($template_id)) {
+            $domain_mail = civicrm_api('Domain', 'get', array('version' => 3,'sequential' => 1));
+            if (!empty($domain_mail['values'][0]['from_email']) && !empty($domain_mail['values'][0]['from_name'])){
+              $params_sendmail = array(
+                'version' => 3,
+                'sequential' => 1,
+                'contact_id' => $contactId,
+                'template_id' => $template_id,
+                'from_email' => $domain_mail['values'][0]['from_email'],
+                'from_name' => $domain_mail['values'][0]['from_name'],
+              );
+              $mail_send = civicrm_api('Email', 'send', $params_sendmail);
+            }
+          }
+        } catch (CiviCRM_API3_Exception $e) {
+
+        }
     }
 
     /**
