@@ -614,6 +614,28 @@ SQL;
             ]);
         }
 
+        /* Add new customer tag to customer */
+        $params_tagnewcustomer = array(
+          'version' => 3,
+          'sequential' => 1,
+          'name' => 'New customer',
+          'return' => 'id',
+        );
+        $result_tagnewcustomer = civicrm_api('Tag', 'getsingle', $params_tagnewcustomer);
+        if(!empty($result_tagnewcustomer['id']) && !empty($organizationId)) {
+          try {
+            $apiParams = array(
+              'version' => 3,
+              'sequential' => 1,
+              'contact_id' => $organizationId,
+              'tag_id' => $result_tagnewcustomer['id'],
+            );
+            $result = civicrm_api('EntityTag', 'create', $apiParams);
+          } catch (CiviCRM_API3_Exception $e) {
+
+          }
+        }
+
         /* Send E-mail confirmation to client */
         try {
           $params = array(
