@@ -285,7 +285,7 @@ SQL;
             'contact_type' => 'Individual',
             'contact_sub_type' => 'Expert',
             'gender_id' => $this->genderTable[$application['gender']],
-            'source' => 'New Customer - form drupal CMS'
+            'source' => 'New Expert - form drupal CMS'
         ];
 
         if (isset($application['initials'])) {
@@ -313,8 +313,30 @@ SQL;
         }
 
         $result = civicrm_api3('Contact', 'create', $apiParams);
-
         $contactId = $result['id'];
+
+        //Add expert to group candidate experts
+        try{
+            $apiParams = array(
+                'version' => 3,
+                'sequential' => 1,
+                'title' => 'Candidate Expert',
+            );
+            $result = civicrm_api3('Group', 'getsingle', $apiParams);
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::debug_log_message('Unable to get group candidate expert');
+        }
+
+        if (!empty($result['id']) && !empty($contactId)){
+            try{
+                CRM_Groupprotect_BAO_GroupProtect::bypassPermissionCheck();
+                $result_groupcontact = civicrm_api3('GroupContact', 'create', array('version' => 3, 'sequential' => 1, 'group_id' => $result['id'], 'contact_id' => $contactId));
+            } catch (CiviCRM_API3_Exception $e) {
+                CRM_Core_Error::debug_log_message('Unable to add contact ID: '.$result['id'].' to group ID: '.$result['id']);
+                CRM_Core_Error::debug_log_message($e->getMessage());
+            }
+        }
+
         if (isset($application['home_address'])) {
             $apiParams = [
                 'contact_id' => $contactId,
@@ -325,29 +347,29 @@ SQL;
                 'city' => $application['home_address']['city'],
                 'country_id' => $application['home_address']['country_id']
             ];
-            civicrm_api3('Address', 'create', $apiParams);
+            $result = civicrm_api3('Address', 'create', $apiParams);
         }
 
-       if (isset($application['phone'])) {
-         $apiParams = [
-           'contact_id' => $contactId,
-           'location_type_id' => $this->home_loc_type_id,
-           'phone' => $application['phone'],
-           'is_primary' => 1,
-           'phone_type_id' => $this->phone_type_id
-         ];
-         civicrm_api3('Phone', 'create', $apiParams);
-       }
+        if (isset($application['phone'])) {
+            $apiParams = [
+                'contact_id' => $contactId,
+                'location_type_id' => $this->home_loc_type_id,
+                'phone' => $application['phone'],
+                'is_primary' => 1,
+                'phone_type_id' => $this->phone_type_id
+            ];
+            $result = civicrm_api3('Phone', 'create', $apiParams);
+        }
 
-      if (isset($application['mobile'])) {
-        $apiParams = [
-          'contact_id' => $contactId,
-          'location_type_id' => $this->home_loc_type_id,
-          'phone' => $application['mobile'],
-          'phone_type_id' => $this->mobile_type_id
-        ];
-        civicrm_api3('Phone', 'create', $apiParams);
-      }
+        if (isset($application['mobile'])) {
+            $apiParams = [
+                'contact_id' => $contactId,
+                'location_type_id' => $this->home_loc_type_id,
+                'phone' => $application['mobile'],
+                'phone_type_id' => $this->mobile_type_id
+            ];
+            $result = civicrm_api3('Phone', 'create', $apiParams);
+        }
 
         if(isset($application['sector_id'])){
             $this->addSector($contactId,$application['sector_id']);
@@ -373,36 +395,35 @@ SQL;
           'image_URL' => CRM_Utils_System::url('civicrm/contact/imagefile', ['photo' => $photoName], true)
         ]);
 
-
         /* Send E-mail confirmation to expert */
         try {
-          $params = array(
-            'version' => 3,
-            'sequential' => 1,
-            'msg_title' => 'Bevestiging aanmelding CV',
-          );
-          $msg_bevestigingaanmeldingcv = civicrm_api('MessageTemplate', 'get', $params);
-          if(is_array($msg_bevestigingaanmeldingcv)){
-            foreach($msg_bevestigingaanmeldingcv['values'] as $key => $value) {
-              $template_id = $value['id'];
-            }
-          }
-
-          if(!empty($template_id)) {
-            $domain_mail = civicrm_api('Domain', 'get', array('version' => 3,'sequential' => 1));
-            if (!empty($domain_mail['values'][0]['from_email']) && !empty($domain_mail['values'][0]['from_name'])){
-              $params_sendmail = array(
+            $params = array(
                 'version' => 3,
                 'sequential' => 1,
-                'contact_id' => $contactId,
-                'template_id' => $template_id,
-                'from_email' => $domain_mail['values'][0]['from_email'],
-                'from_name' => $domain_mail['values'][0]['from_name'],
-                'case_id' => $caseId,
-              );
-              $mail_send = civicrm_api('Email', 'send', $params_sendmail);
+                'msg_title' => 'Bevestiging aanmelding CV',
+            );
+            $msg_bevestigingaanmeldingcv = civicrm_api3('MessageTemplate', 'get', $params);
+            if(is_array($msg_bevestigingaanmeldingcv)){
+                foreach($msg_bevestigingaanmeldingcv['values'] as $key => $value) {
+                    $template_id = $value['id'];
+                }
             }
-          }
+
+            if(!empty($template_id)) {
+                $domain_mail = civicrm_api3('Domain', 'get', array('version' => 3,'sequential' => 1));
+                if (!empty($domain_mail['values'][0]['from_email']) && !empty($domain_mail['values'][0]['from_name'])){
+                    $params_sendmail = array(
+                        'version' => 3,
+                        'sequential' => 1,
+                        'contact_id' => $contactId,
+                        'template_id' => $template_id,
+                        'from_email' => $domain_mail['values'][0]['from_email'],
+                        'from_name' => $domain_mail['values'][0]['from_name'],
+                        'case_id' => $caseId,
+                    );
+                    $mail_send = civicrm_api3('Email', 'send', $params_sendmail);
+                }
+            }
         } catch (CiviCRM_API3_Exception $e) {
 
         }
