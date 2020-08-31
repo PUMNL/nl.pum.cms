@@ -337,7 +337,7 @@ SQL;
             }
         }
 
-        if (isset($application['home_address'])) {
+        if (!empty($application['home_address'])) {
             $apiParams = [
                 'contact_id' => $contactId,
                 'location_type_id' => $this->work_loc_type_id,
@@ -350,7 +350,7 @@ SQL;
             $result = civicrm_api3('Address', 'create', $apiParams);
         }
 
-        if (isset($application['phone'])) {
+        if (!empty($application['phone'])) {
             $apiParams = [
                 'contact_id' => $contactId,
                 'location_type_id' => $this->home_loc_type_id,
@@ -361,7 +361,7 @@ SQL;
             $result = civicrm_api3('Phone', 'create', $apiParams);
         }
 
-        if (isset($application['mobile'])) {
+        if (!empty($application['mobile'])) {
             $apiParams = [
                 'contact_id' => $contactId,
                 'location_type_id' => $this->home_loc_type_id,
@@ -371,7 +371,7 @@ SQL;
             $result = civicrm_api3('Phone', 'create', $apiParams);
         }
 
-        if(isset($application['sector_id'])){
+        if(!empty($application['sector_id'])){
             $this->addSector($contactId,$application['sector_id']);
         }
 
@@ -629,6 +629,7 @@ SQL;
         ]);
 
         if($registration['newsletter_subscription']==='Y' or $registration['newsletter_subscription']==='true' ){
+            CRM_Groupprotect_BAO_GroupProtect::bypassPermissionCheck();
             civicrm_api3('GroupContact', 'create', [
                 'contact_id' => $contactId,
                 'group_id' => $this->newsLetterGroupId
