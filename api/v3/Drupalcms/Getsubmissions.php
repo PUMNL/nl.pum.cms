@@ -17,8 +17,8 @@ function civicrm_api3_Drupalcms_getsubmissions($params) {
 
         $failures = $submissionProcessor->reportFailures();
         if(!empty($failures)){
-            CRM_Core_Error::debug_log_message('nl.pum.cms Getsubmissions Failures:');
-            CRM_Core_Error::debug_log_message(print_r($failures,TRUE));
+            //CRM_Core_Error::debug_log_message('nl.pum.cms Getsubmissions Failures:');
+            //CRM_Core_Error::debug_log_message(print_r($failures,TRUE));
             $error = "<pre>\n";
             foreach($failures as $failure){
 
@@ -38,7 +38,8 @@ function civicrm_api3_Drupalcms_getsubmissions($params) {
         return civicrm_api3_create_success($returnValues, $params, 'Drupalcms', 'Getsubmissions');
     } catch (Exception $ex) {
         $mailError = new CRM_CMS_MailError();
-        $mailError->setError($ex->getMessage());
+        //CRM_Core_Error::debug_log_message($ex);
+        $mailError->setError($ex);
         civicrm_api3('Email', 'Send', [
             'contact_id' => CRM_Core_BAO_Setting::getItem('Drupal CMS Api', 'drupal_cms_contact_id'),
             'template_id' => CRM_Core_BAO_Setting::getItem('Drupal CMS Api', 'drupal_cms_template_id'),

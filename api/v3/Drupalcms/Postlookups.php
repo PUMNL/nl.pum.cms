@@ -22,6 +22,7 @@ function civicrm_api3_Drupalcms_postlookups($params)
 
     } catch (Exception $ex) {
         $mailError = new CRM_CMS_MailError();
+        //CRM_Core_Error::debug_log_message($ex);
         $mailError->setError($ex);
         civicrm_api3('Email', 'Send', [
             'contact_id' => CRM_Core_BAO_Setting::getItem('Drupal CMS Api', 'drupal_cms_contact_id'),

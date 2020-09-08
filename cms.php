@@ -151,7 +151,14 @@ function cms_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = [], $co
    if(isset($tokens['cms'])){
        if(in_array('api_error',$tokens['cms'])){
           $mailError = new CRM_CMS_MailError();
-          $values['cms.api_error'] = $mailError->getError();
+          $mailmessage = $mailError->getError();
+          if (is_array($cids)) {
+            foreach ($cids as $cid) {
+              $values[$cid]['cms.api_error'] = $mailmessage;
+            }
+          } else {
+            $values['cms.api_error'] = $mailmessage;
+          }
        }
    }
 }
