@@ -10,7 +10,12 @@ class CRM_CMS_Lookup {
   var $repGroupId;
   var $relationTypeId;
 
-    public function __construct()
+  /**
+   * CRM_CMS_Lookup constructor.
+   *
+   * @throws \CiviCRM_API3_Exception
+   */
+  public function __construct()
     {
         $this->countryGroupId = civicrm_api3('Group', 'getvalue', [
                 'title' => 'Active countries',
@@ -26,6 +31,9 @@ class CRM_CMS_Lookup {
         $this->relationTypeId = $config->getRepresepentativeRelationshipTypeId();
     }
 
+  /**
+   * posts the list with representatives to the CMS Api
+   */
   public function representatives()
   {
 
@@ -87,8 +95,12 @@ SQL;
     }
   }
 
+  /**
+   * posts the list with countries to the CMS Api
+   */
   public function countries()
   {
+    // A country is a contact in the PUM database
     $sql = <<<SQL
     SELECT distinctrow  cntr.id country_id
     ,                   cntr.iso_code
@@ -129,7 +141,10 @@ SQL;
     }
   }
 
-    public function sectors()
+  /**
+   * posts the list with sectors to the CMS Api
+   */
+  public function sectors()
     {
         set_time_limit(0);
         $rest = new CRM_CMS_Rest();
@@ -157,7 +172,10 @@ SQL;
         }
     }
 
-    public function optionValues()
+  /**
+   * posts a list with option values to the CMS Api
+   */
+  public function optionValues()
     {
         $sql=<<<SQL
         select ov.value
