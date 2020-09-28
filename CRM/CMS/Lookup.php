@@ -8,7 +8,8 @@ class CRM_CMS_Lookup {
 
   var $countryGroupId;
   var $repGroupId;
-  var $relationTypeId;
+  var $countryCoordinatorsGroupId;
+  var $projectOfficersGroupId;
 
   /**
    * CRM_CMS_Lookup constructor.
@@ -27,10 +28,132 @@ class CRM_CMS_Lookup {
                 'return' => 'id'
             ]
         );
-        $config = CRM_Newcustomer_Config::singleton();
-        $this->relationTypeId = $config->getRepresepentativeRelationshipTypeId();
+      $this->countryCoordinatorsGroupId = civicrm_api3('Group', 'getvalue', [
+          'title' => 'Country Coordinators',
+          'return' => 'id'
+        ]
+      );
+      $this->projectOfficersGroupId = civicrm_api3('Group', 'getvalue', [
+          'title' => 'Project Officers',
+          'return' => 'id'
+        ]
+      );
     }
 
+  /**
+   * posts the list with countrycoordinators to the CMS Api
+   */
+  public function countryCoordinators(){
+    $sql = <<<SQL
+SELECT distinctrow max(cr.id) contact_id
+                 , rep.display_name         display_name
+                 , rep.sort_name            sort_name
+                 , em.email                 email
+                 , ph.phone                 phone
+                 , vc.civicrm_country_id    country_id_responsible
+FROM civicrm_contact rep
+         JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND cr.is_active=1 and (cr.end_date >= CURDATE() or cr.end_date is null) AND (cr.start_date <= CURDATE() or cr.start_date is null)
+         JOIN civicrm_contact cntr ON (cr.contact_id_a = cntr.id) AND cntr.contact_type = 'Organization' AND cntr.contact_sub_type LIKE '%Country%'
+         JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2 and cgc.status='Added')
+         JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')
+         LEFT JOIN civicrm_email em ON (rep.id = em.contact_id AND em.is_primary = 1)
+         LEFT JOIN civicrm_phone ph ON (rep.id = ph.contact_id AND ph.is_primary = 1)
+         LEFT JOIN civicrm_value_country vc ON (vc.entity_id=cntr.id)
+group by rep.id,rep.sort_name,vc.civicrm_country_id
+order by rep.sort_name
+SQL;
+    set_time_limit(0);
+    $rest = new CRM_CMS_Rest();
+    $remote = $rest->getAll('Countrycoordinator');
+    $remoteReps = [];
+    foreach ($remote['Items'] as $key => $item) {
+      $remoteReps[$item['Item']['contact_id']] = $item['Item']['Id'];
+    }
+    $dao = CRM_Core_DAO::executeQuery($sql, [
+        1 => [CRM_Core_DAO::getFieldValue('CRM_Contact_BAO_RelationshipType', 'Country Coordinator is', 'id', 'name_a_b'), 'Integer'],
+        2 => [$this->countryGroupId, 'Integer'],
+        3 => [$this->countryCoordinatorsGroupId, 'Integer'],
+      ]
+    );
+    while($dao->fetch()){
+      $result = [
+        'contact_id' => $dao->contact_id,
+        'display_name'           => $dao->display_name,
+        'sort_name'              => $dao->sort_name,
+        'email'                  => $dao->email,
+        'phone'                  => $dao->phone,
+        'country_id_responsible' => $dao->country_id_responsible,
+      ];
+      if(key_exists($dao->contact_id,$remoteReps)){
+        $rest->update('Countrycoordinator',$remoteReps[$dao->contact_id],$result);
+        unset($remoteReps[$dao->contact_id]);
+      } else {
+        $rest->create('Countrycoordinator',$result);
+      };
+    }
+
+    foreach ($remoteReps as $remoteRepsId) {
+      $rest->delete('Countrycoordinator', $remoteRepsId);
+    }
+  }
+
+
+  /**
+   * posts the list with countrycoordinators to the CMS Api
+   */
+  public function projectOfficers(){
+    $sql = <<<SQL
+SELECT distinctrow max(cr.id) contact_id
+                 , rep.display_name         display_name
+                 , rep.sort_name            sort_name
+                 , em.email                 email
+                 , ph.phone                 phone
+                 , vc.civicrm_country_id    country_id_responsible
+FROM civicrm_contact rep
+         JOIN civicrm_relationship cr ON rep.id = cr.contact_id_b AND cr.relationship_type_id = %1 AND cr.is_active=1 and (cr.end_date >= CURDATE() or cr.end_date is null) AND (cr.start_date <= CURDATE() or cr.start_date is null)
+         JOIN civicrm_contact cntr ON (cr.contact_id_a = cntr.id) AND cntr.contact_type = 'Organization' AND cntr.contact_sub_type LIKE '%Country%'
+         JOIN civicrm_group_contact cgc  ON (cgc.contact_id = cntr.id and cgc.group_id=%2 and cgc.status='Added')
+         JOIN civicrm_group_contact cgcr  ON (cgcr.contact_id = rep.id and cgcr.group_id=%3 and cgcr.status='Added')
+         LEFT JOIN civicrm_email em ON (rep.id = em.contact_id AND em.is_primary = 1)
+         LEFT JOIN civicrm_phone ph ON (rep.id = ph.contact_id AND ph.is_primary = 1)
+         LEFT JOIN civicrm_value_country vc ON (vc.entity_id=cntr.id)
+group by rep.id,rep.sort_name,vc.civicrm_country_id
+order by rep.sort_name
+SQL;
+    set_time_limit(0);
+    $rest = new CRM_CMS_Rest();
+    $remote = $rest->getAll('Projectofficer');
+    $remoteReps = [];
+    foreach ($remote['Items'] as $key => $item) {
+      $remoteReps[$item['Item']['contact_id']] = $item['Item']['Id'];
+    }
+    $dao = CRM_Core_DAO::executeQuery($sql, [
+        1 => [CRM_Core_DAO::getFieldValue('CRM_Contact_BAO_RelationshipType', 'Project Officer for', 'id', 'name_a_b'), 'Integer'],
+        2 => [$this->countryGroupId, 'Integer'],
+        3 => [$this->projectOfficersGroupId, 'Integer'],
+      ]
+    );
+    while($dao->fetch()){
+      $result = [
+        'contact_id' => $dao->contact_id,
+        'display_name'           => $dao->display_name,
+        'sort_name'              => $dao->sort_name,
+        'email'                  => $dao->email,
+        'phone'                  => $dao->phone,
+        'country_id_responsible' => $dao->country_id_responsible,
+      ];
+      if(key_exists($dao->contact_id,$remoteReps)){
+        $rest->update('Projectofficer',$remoteReps[$dao->contact_id],$result);
+        unset($remoteReps[$dao->contact_id]);
+      } else {
+        $rest->create('Projectofficer',$result);
+      };
+    }
+
+    foreach ($remoteReps as $remoteRepsId) {
+      $rest->delete('Projectofficer', $remoteRepsId);
+    }
+  }
   /**
    * posts the list with representatives to the CMS Api
    */
@@ -66,7 +189,7 @@ SQL;
           $remoteReps[$item['Item']['contact_id']] = $item['Item']['Id'];
       }
       $dao = CRM_Core_DAO::executeQuery($sql, [
-              1 => [$this->relationTypeId, 'Integer'],
+              1 => [CRM_Newcustomer_Config::singleton()->getRepresepentativeRelationshipTypeId(), 'Integer'],
               2 => [$this->countryGroupId, 'Integer'],
               3 => [$this->repGroupId, 'Integer'],
           ]

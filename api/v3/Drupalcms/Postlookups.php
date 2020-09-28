@@ -15,6 +15,8 @@ function civicrm_api3_Drupalcms_postlookups($params)
         $returnValues = [];
         $lookup = new CRM_CMS_Lookup();
         $lookup->representatives();
+        $lookup->projectOfficers();
+        $lookup->countryCoordinators();
         $lookup->countries();
         $lookup->sectors();
         $lookup->optionValues();
