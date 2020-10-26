@@ -22,6 +22,7 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
     CRM_CMS_Upgrader::upgrade_1002();
     CRM_CMS_Upgrader::upgrade_1003();
     CRM_CMS_Upgrader::upgrade_1004();
+    CRM_CMS_Upgrader::upgrade_1005();
   }
 
   /**
@@ -168,6 +169,16 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
       $this->executeSqlFile('sql/1004_update_submission.sql');
       return TRUE;
     }
+
+  public function upgrade_1005() {
+    $this->createDrupalCMSJob(
+      'DrupalCms: Dedup', // name
+      'Deduplicates possible doubles in the lookup tables of the CMS', // description
+      'dedup',// action
+      'Always'// frequency
+    );
+    return TRUE;
+  }
 
   /**
    * Example: Run a slow upgrade process by breaking it up into smaller chunk.
