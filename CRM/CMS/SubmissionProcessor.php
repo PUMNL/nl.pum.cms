@@ -459,6 +459,13 @@ SQL;
             1 => [$caseId,'Integer'],
             2 => [$motivation,'String']
         ]);
+
+        $recruitmentTeamMemberId = CRM_Threepeas_BAO_PumCaseRelation::getRecruitmentTeamMemberId($contactId);
+        $startDate = date('Ymd');
+        if(!empty($recruitmentTeamMemberId)){
+          CRM_Threepeas_BAO_PumCaseRelation::createCaseRelation($caseId, $contactId, $recruitmentTeamMemberId, $startDate, 'recruitment_team');
+        }
+
         return $caseId;
     }
 
