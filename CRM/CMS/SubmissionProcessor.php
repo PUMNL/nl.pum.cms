@@ -340,7 +340,7 @@ SQL;
         if (!empty($application['home_address'])) {
             $apiParams = [
                 'contact_id' => $contactId,
-                'location_type_id' => $this->work_loc_type_id,
+                'location_type_id' => $this->home_loc_type_id,
                 'is_primary' => 1,
                 'street_address' => $application['home_address']['street_address'],
                 'postal_code' => $application['home_address']['postal_code'],
