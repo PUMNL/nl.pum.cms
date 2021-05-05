@@ -23,6 +23,7 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
     CRM_CMS_Upgrader::upgrade_1003();
     CRM_CMS_Upgrader::upgrade_1004();
     CRM_CMS_Upgrader::upgrade_1005();
+    CRM_CMS_Upgrader::upgrade_1006();
   }
 
   /**
@@ -178,6 +179,44 @@ class CRM_CMS_Upgrader extends CRM_CMS_Upgrader_Base {
       'Always'// frequency
     );
     return TRUE;
+  }
+
+  /**
+   * CRM_CMS_Upgrader::upgrade_1006()
+   *
+   * Update field label Motivatian Expert => Motivation Expert
+   *
+   * @return
+   */
+  public function upgrade_1006() {
+    try {
+      $params_motivation_expert = array(
+        'version' => 3,
+        'sequential' => 1,
+        'custom_group_id' => 'motivation_expert',
+        'name' => 'motivation_expert_application',
+      );
+      $result_motivation_expert = civicrm_api('CustomField', 'getsingle', $params_motivation_expert);
+    } catch (CiviCRM_API3_Exception $ex) {
+
+    }
+
+    if(!empty($result_motivation_expert['id'])){
+      $params_fix_motivation_expert_label = array(
+        'version' => 3,
+        'sequential' => 1,
+        'id' => $result_motivation_expert['id'],
+        'label' => 'Motivation Expert'
+      );
+
+      $result_fix_motivation_expert_label = civicrm_api('CustomField', 'update', $params_fix_motivation_expert_label);
+    }
+
+    if(isset($result_fix_motivation_expert_label['is_error']) && $result_fix_motivation_expert_label['is_error'] == 0) {
+      return TRUE;
+    } else {
+      return FALSE;
+    }
   }
 
   /**
